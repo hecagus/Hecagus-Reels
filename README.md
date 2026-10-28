@@ -1,6 +1,6 @@
 > **Estudio web disponible:** https://hecagus-reels.vercel.app · [Configuración y seguridad](web/README.md). La interfaz ya está publicada; las funciones de generación necesitan GITHUB_TOKEN y HEC_ACCESS_KEY configurados en Vercel. Para guiones automáticos desde una idea también se necesita OPENAI_API_KEY (consumo de pago).
 
-# HEC REELS — versión Piper español mexicano
+# HecAgus Reels (HEC REELS) — versión Piper español mexicano
 
 **Implementación original e independiente.** No se incluye código privativo de DASDINGO.
 
