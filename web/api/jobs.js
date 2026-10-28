@@ -1,4 +1,4 @@
-import {method,guard,readBody,gh,respond,errorOut,validateNarration,WORKFLOW} from './_lib.js';
+import {method,guard,readBody,gh,respond,errorOut,validateNarration,WORKFLOW,signedDownload} from './_lib.js';
 const base='/actions/workflows/'+WORKFLOW;
 function safeRun(run){
   return {id:run.id, status:run.status, conclusion:run.conclusion, title:run.display_title,
@@ -22,10 +22,10 @@ export default async function handler(req,res){
     if(id){
       if(!/^\d{1,16}$/.test(id)){respond(res,400,{error:'ID inválido.'});return;}
       const run=await(await gh('/actions/runs/'+id)).json();
-      respond(res,200,{run:safeRun(run)});return;
+      respond(res,200,{run:{...safeRun(run),downloadUrl:run.status==='completed'&&run.conclusion==='success'?signedDownload(run.id):null}});return;
     }
     const response=await gh(base+'/runs?event=workflow_dispatch&per_page=20');
     const data=await response.json();
-    respond(res,200,{runs:(data.workflow_runs||[]).map(safeRun)});
+    respond(res,200,{runs:(data.workflow_runs||[]).map(run=>({...safeRun(run),downloadUrl:run.status==='completed'&&run.conclusion==='success'?signedDownload(run.id):null}))});
   }catch(err){errorOut(res,err);}
 }
