@@ -1,5 +1,5 @@
 import {randomBytes,timingSafeEqual} from 'node:crypto';
-import {method,respond,cookies,seal,ownerSession,sessionKey,sameOrigin} from './_lib.js';
+import {method,respond,cookies,seal,sessionKey,sameOrigin} from './_lib.js';
 
 const BASE='https://hecagus-reels.vercel.app';
 const CALLBACK=BASE+'/api/callback';
@@ -56,7 +56,10 @@ export async function callback(req,res){
       return respond(res,403,{error:'Este estudio solo permite generar con la cuenta propietaria hecagus.'});
     }
     const exp=Date.now()+7*24*60*60*1000;
-    res.setHeader('Set-Cookie',cookie('hec_session',seal({login:'hecagus',id:user.id,exp}),7*24*60*60));
+    res.setHeader('Set-Cookie',[
+      cookie('hec_oauth_state','',0),
+      cookie('hec_session',seal({login:'hecagus',id:user.id,exp}),7*24*60*60)
+    ]);
     res.statusCode=302;res.setHeader('Location','/');res.setHeader('Cache-Control','no-store');res.end();
   }catch(err){
     console.error('OAuth:',err.message);
