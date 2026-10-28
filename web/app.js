@@ -213,10 +213,11 @@ function setup(){
   $('copy-script').addEventListener('click',async()=>{
     try{
       const text=validate(els.script.value);
+      if(!navigator.clipboard?.writeText)throw Error('Tu navegador no permite copiar automáticamente; selecciona y copia el guion del campo.');
       await navigator.clipboard.writeText(text);
       message('Guion copiado. Abre GitHub Actions (manual), pulsa Run workflow y pega el texto en Narración.','success');
     }catch(err){
-      message(err instanceof TypeError?'Escribe primero un guion.':err.message,'error');
+      message(err.message||'No se pudo copiar el guion.','error');
     }
   });
   $('logout-btn').addEventListener('click',async()=>{
