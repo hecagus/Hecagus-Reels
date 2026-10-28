@@ -44,15 +44,15 @@
     <div class="options">
      <div class="option"><span>Voz</span><strong>Español mexicano · Piper</strong></div>
      <div class="option"><label for="rate">Velocidad</label><select id="rate"><option value="0.95">0.95× · Pausada</option><option value="1.00" selected>1.00× · Normal</option><option value="1.05">1.05× · Ágil</option><option value="1.10">1.10× · Rápida</option></select></div>
+     <div class="option"><label for="visual">Motor visual</label><select id="visual"><option value="2d" selected>Animación 2.5D · rápida</option><option value="3d">Blender 3D · experimental</option></select></div>
     </div>
-    <div class="credential">
-      <div><label for="key">Clave privada del estudio</label><span>Solo se usa para autorizar tus renders. No es tu token de GitHub.</span></div>
-      <input type="password" id="key" minlength="16" autocomplete="off" placeholder="Valor exacto de HEC_ACCESS_KEY"/>
+    <div class="github-auth" id="auth-panel">
+      <div class="auth-copy"><strong id="auth-title">Acceso con GitHub</strong><span id="auth-description">Tu cuenta GitHub autoriza la generación. No necesitas escribir ninguna clave privada.</span></div>
       <div class="verify-row">
-        <button type="button" id="verify-key" class="verify-btn">Comprobar clave</button>
-        <button type="button" id="show-key" class="verify-btn" aria-pressed="false">Mostrar clave</button>
+        <a href="/api/login" id="login-link" class="verify-btn">Entrar con GitHub</a>
+        <button type="button" id="logout-btn" class="verify-btn" hidden>Cerrar sesión</button>
+        <a href="https://github.com/hecagus/Hecagus-Reels/actions/workflows/generar-reel.yml" id="manual-link" class="verify-btn" target="_blank" rel="noopener noreferrer">GitHub Actions (manual)</a>
       </div>
-      <p id="key-feedback" role="status" aria-live="polite" class="draft-feedback"></p>
     </div>
     <button type="button" id="start-btn" class="primary-btn">Generar mi reel <span aria-hidden="true">➜</span></button>
     <p id="feedback" role="status" aria-live="polite" class="feedback"></p>
@@ -66,17 +66,17 @@
       <div class="video-content"><small>ESCENA 01</small><div id="preview-text">Tu próxima idea empieza aquí.</div></div>
       <div class="video-bottom"><span>ES-MX / PIPER</span><span>9:16</span></div>
      </div>
-     <p class="preview-foot">Vista conceptual. El render final usa animaciones 2.5D; todavía no genera imágenes fotorrealistas.</p>
+     <p class="preview-foot">Vista conceptual. 2.5D es el motor habitual; el modo Blender genera geometría 3D sencilla, no escenas fotorrealistas.</p>
     </section>
     <section class="panel tasks">
      <div class="section-top"><span class="section-index">03 / PRODUCCIÓN</span><button id="refresh-btn" type="button" class="refresh">Actualizar ↻</button></div>
      <h2>Tus renders</h2>
-     <div id="task-list" class="task-list"><p class="placeholder">Introduce tu clave para consultar ejecuciones.</p></div>
+     <div id="task-list" class="task-list"><p class="placeholder">Inicia sesión con GitHub para consultar tus renders.</p></div>
      <div class="status-row"><span id="github-state" class="status-small">● GitHub sin revisar</span><span id="ai-state" class="status-small">● IA sin revisar</span></div>
     </section>
    </aside>
   </div>
-  <footer>HecAgus Reels · Proyecto independiente <span>Motor local en la nube: Piper + FFmpeg + GitHub Actions</span></footer>
+  <footer>HecAgus Reels · Proyecto independiente <span>Piper + FFmpeg + Blender opcional + GitHub Actions</span></footer>
  </main>
 </body>
 </html>
