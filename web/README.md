@@ -1,4 +1,4 @@
-# HEC REELS · Estudio web
+# HecAgus Reels (HEC REELS) · Estudio web
 
 Página para crear videos verticales sin instalar aplicaciones.
 
