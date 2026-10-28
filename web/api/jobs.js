@@ -12,7 +12,8 @@ export default async function handler(req,res){
       const texto=validateNarration(body.texto);
       const velocidad=['0.95','1.00','1.05','1.10'].includes(body.velocidad)?body.velocidad:'1.00';
       const folio=typeof body.folio==='string'&&/^[a-zA-Z0-9_-]{6,40}$/.test(body.folio)?body.folio:'web'+Date.now();
-      const payload={ref:'main',inputs:{modo:'texto',texto,velocidad,folio}};
+      const estilo=body.estilo==='3d'?'3d':'2d';
+      const payload={ref:'main',inputs:{modo:'texto',texto,velocidad,folio,estilo}};
       const response=await gh(base+'/dispatches',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
       const data=response.status===204?{}:await response.json().catch(()=>({}));
       respond(res,202,{accepted:true,folio,runId:data.workflow_run_id||null,runUrl:data.html_url||null});
