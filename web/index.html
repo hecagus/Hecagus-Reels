@@ -45,14 +45,9 @@
      <div class="option"><span>Voz</span><strong>Español mexicano · Piper</strong></div>
      <div class="option"><label for="rate">Velocidad</label><select id="rate"><option value="0.95">0.95× · Pausada</option><option value="1.00" selected>1.00× · Normal</option><option value="1.05">1.05× · Ágil</option><option value="1.10">1.10× · Rápida</option></select></div>
     </div>
-    <div class="credential">
-      <div><label for="key">Clave privada del estudio</label><span>Solo se usa para autorizar tus renders. No es tu token de GitHub.</span></div>
-      <input type="password" id="key" minlength="16" autocomplete="off" placeholder="Valor exacto de HEC_ACCESS_KEY"/>
-      <div class="verify-row">
-        <button type="button" id="verify-key" class="verify-btn">Comprobar clave</button>
-        <button type="button" id="show-key" class="verify-btn" aria-pressed="false">Mostrar clave</button>
-      </div>
-      <p id="key-feedback" role="status" aria-live="polite" class="draft-feedback"></p>
+    <div class="credential" aria-label="Protección de cuenta">
+      <div><strong>Acceso con Vercel</strong><span>Tu sesión autoriza los renders. No necesitas otra contraseña.</span></div>
+      <p id="auth-feedback" role="status" aria-live="polite" class="draft-feedback"></p>
     </div>
     <button type="button" id="start-btn" class="primary-btn">Generar mi reel <span aria-hidden="true">➜</span></button>
     <p id="feedback" role="status" aria-live="polite" class="feedback"></p>
