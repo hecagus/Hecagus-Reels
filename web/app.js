@@ -1,5 +1,5 @@
 const $ = (id) => document.getElementById(id);
-const state = { mode: 'idea', busy: false, interval: null, current: null };
+const state = { mode: 'idea', busy: false, interval: null, current: null, aiAvailable: false, draftIdea: '', draftText: '' };
 const MAX_SCENES = 6;
 
 const els = {
@@ -11,6 +11,11 @@ const els = {
 function message(value, type='') {
   els.feedback.textContent = value;
   els.feedback.className = 'feedback '+type;
+}
+function draftMessage(value, type='') {
+  const target = $('draft-feedback');
+  target.textContent = value;
+  target.className = 'draft-feedback '+type;
 }
 function setBusy(value) {
   state.busy = value;
@@ -28,6 +33,7 @@ function setMode(mode) {
   $('script-zone').hidden=false; // El guion se puede revisar siempre.
   $('draft-btn').hidden=mode!=='idea';
   message('');
+  draftMessage('');
 }
 function scenes(text) {
   return text.split('||').map(x=>x.replace(/\s+/g,' ').trim());
@@ -65,8 +71,11 @@ async function status() {
     const x=await api('/api/status',{auth:false});
     $('github-state').textContent=x.github&&x.access?'● Motor configurado':'● Falta configuración';
     $('github-state').style.color=x.github&&x.access?'#8ee9ba':'#ffd18c';
-    $('ai-state').textContent=x.ai?'● Guiones IA activos':'● IA opcional pendiente';
-    $('ai-state').style.color=x.ai?'#8ee9ba':'#9baec9';
+    state.aiAvailable=Boolean(x.ai);
+    $('ai-state').textContent=x.ai?'● Guiones con IA disponibles':'● Borradores gratuitos disponibles';
+    $('ai-state').style.color='#8ee9ba';
+    els.draft.textContent=x.ai?'✦ Crear guion con IA':'Crear guion gratis (plantilla)';
+    $('idea-help').textContent=x.ai?'Un modelo de IA creará escenas editables.':'Borrador automático por plantillas, sin IA ni pagos. Puedes editarlo.';
     if(!x.github||!x.access)message('La web está publicada, pero faltan GITHUB_TOKEN o HEC_ACCESS_KEY en Vercel.');
   }catch{
     $('github-state').textContent='● No se pudo consultar la configuración';
@@ -126,17 +135,31 @@ async function fetchRuns() {
     }
   }catch(err){message(err.message,'error');}
 }
+async function generateDraft(idea) {
+  const ai=state.aiAvailable;
+  const result=await api(ai?'/api/script':'/api/draft',{
+    method:'POST',body:{idea},auth:ai
+  });
+  const text=validate(result.texto);
+  els.script.value=text;
+  state.draftIdea=idea;
+  state.draftText=text;
+  updatePreview();
+  draftMessage(ai
+    ?'Guion creado con IA. Revísalo antes de generar el video.'
+    :'Borrador gratuito listo. Utiliza plantillas, no IA. Revísalo y edítalo antes del video.','success');
+  return text;
+}
 async function makeDraft(){
   if(state.busy)return;
   const idea=els.idea.value.trim();
-  if(idea.length<8){message('Describe mejor tu idea (al menos 8 caracteres).','error');return;}
-  setBusy(true);message('Escribiendo guion en escenas...');
+  if(idea.length<3){draftMessage('Escribe un tema (mínimo 3 caracteres).','error');return;}
+  setBusy(true);
+  draftMessage(state.aiAvailable?'Generando guion con IA...':'Preparando borrador gratuito...');
   try{
-    const result=await api('/api/script',{method:'POST',body:{idea}});
-    els.script.value=validate(result.texto);
-    updatePreview();
-    message('Guion creado. Puedes editarlo antes de generar el video.','success');
-  }catch(err){message(err.message,'error');}
+    await generateDraft(idea);
+    $('script-zone').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }catch(err){draftMessage(err.message,'error');}
   finally{setBusy(false);}
 }
 async function start() {
@@ -144,11 +167,9 @@ async function start() {
  setBusy(true);
  try{
    if(state.mode==='idea' && !els.script.value.trim()){
-     if(els.idea.value.trim().length<8)throw Error('Escribe una idea de al menos 8 caracteres.');
-     message('Convirtiendo tu idea en guion con IA...');
-     const draft=await api('/api/script',{method:'POST',body:{idea:els.idea.value.trim()}});
-     els.script.value=validate(draft.texto);
-     updatePreview();
+     if(els.idea.value.trim().length<3)throw Error('Escribe un tema de al menos 3 caracteres.');
+     message(state.aiAvailable?'Convirtiendo tu idea en guion con IA...':'Generando borrador gratuito...');
+     await generateDraft(els.idea.value.trim());
    }
    const text=validate(els.script.value);
    message('Enviando el trabajo a GitHub...');
@@ -166,7 +187,17 @@ async function start() {
 function setup(){
   $('mode-idea').addEventListener('click',()=>setMode('idea'));
   $('mode-script').addEventListener('click',()=>setMode('script'));
-  els.idea.addEventListener('input',updatePreview);
+  els.idea.addEventListener('input',()=>{
+    if(state.draftIdea && els.idea.value.trim()!==state.draftIdea) {
+      if(els.script.value===state.draftText){
+        els.script.value='';
+      }
+      state.draftIdea='';
+      state.draftText='';
+      draftMessage('Cambiaste la idea. Genera un borrador nuevo antes de continuar.');
+    }
+    updatePreview();
+  });
   els.script.addEventListener('input',updatePreview);
   els.access.addEventListener('change',()=>{if(els.access.value.trim().length>=16)fetchRuns();});
   $('refresh-btn').addEventListener('click',fetchRuns);
