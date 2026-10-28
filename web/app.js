@@ -200,6 +200,24 @@ function setup(){
   });
   els.script.addEventListener('input',updatePreview);
   els.access.addEventListener('change',()=>{if(els.access.value.trim().length>=16)fetchRuns();});
+  $('verify-key').addEventListener('click',async()=>{
+    const target=$('key-feedback');
+    target.textContent='Comprobando...';
+    try{
+      const data=await api('/api/verify',{method:'POST'});
+      target.textContent=data.message;
+      target.className='draft-feedback success';
+    }catch(e){
+      target.textContent=e.message;
+      target.className='draft-feedback error';
+    }
+  });
+  $('show-key').addEventListener('click',()=>{
+    const visible=els.access.type==='password';
+    els.access.type=visible?'text':'password';
+    $('show-key').textContent=visible?'Ocultar clave':'Mostrar clave';
+    $('show-key').setAttribute('aria-pressed',String(visible));
+  });
   $('refresh-btn').addEventListener('click',fetchRuns);
   els.draft.addEventListener('click',makeDraft);
   els.start.addEventListener('click',start);
