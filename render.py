@@ -15,7 +15,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 BASE_W, BASE_H = 540, 960
-VISUALS = {"question", "domain", "resolve", "connect", "summary", "abstract"}
+VISUALS = {"question", "domain", "resolve", "connect", "summary", "abstract", "studio_home", "studio_script", "studio_key", "studio_render", "studio_results", "studio_free"}
 BASE_BG = (7, 13, 28)
 WHITE = (246, 250, 255)
 MUTED = (167, 184, 207)
@@ -98,8 +98,71 @@ def line_packet(draw, a, b, t, accent):
     glow_circle(draw, x, y, 6, accent, t)
 
 
+
+def draw_studio_visual(draw, mode, t, accent):
+    """Maquetas animadas simplificadas de la interfaz web real, sin capturas falsas."""
+    rounded(draw,(52,355,488,735),22,(17,30,48),outline=(59,100,130),width=2)
+    rounded(draw,(53,356,487,394),18,(23,48,69))
+    draw.ellipse((67,370,75,378), fill=(255,114,120))
+    draw.ellipse((83,370,91,378), fill=(255,206,109))
+    draw.ellipse((99,370,107,378), fill=(92,220,150))
+    label(draw,'HecAgus REELS',270,369,17,accent,True)
+    if mode=='studio_home':
+        label(draw,'Abre tu navegador',270,423,23,WHITE,True)
+        rounded(draw,(81,472,459,532),13,(8,21,35),outline=accent,width=2)
+        label(draw,'hecagus-reels.vercel.app',270,488,20,WHITE,True)
+        label(draw,'ESTUDIO EN LA NUBE',270,564,16,MUTED,True)
+        rounded(draw,(142,608,398,668),13,accent)
+        label(draw,'ABRIR SITIO',270,626,19,BASE_BG,True)
+    elif mode=='studio_script':
+        label(draw,'Nuevo proyecto',270,421,23,WHITE,True)
+        rounded(draw,(72,462,469,514),12,(18,45,64))
+        rounded(draw,(257,466,465,510),9,(44,104,123))
+        label(draw,'Tengo una idea',162,479,14,MUTED,True)
+        label(draw,'Tengo el guion',361,478,14,WHITE,True)
+        label(draw,'Narración por escenas',270,541,16,WHITE,True)
+        rounded(draw,(76,577,464,674),13,(7,17,32),outline=(50,82,110),width=2)
+        label(draw,'Escena uno...',270,590,19,WHITE,True)
+        label(draw,'||',270,618,22,accent,True)
+        label(draw,'Escena dos...',270,646,19,WHITE,True)
+    elif mode=='studio_key':
+        label(draw,'Configura la narración',270,423,20,WHITE,True)
+        label(draw,'Voz: español mexicano',270,466,18,accent,True)
+        rounded(draw,(87,508,453,565),12,(9,23,39),outline=(52,92,118),width=2)
+        label(draw,'Velocidad     1.00×',270,524,19,WHITE,True)
+        label(draw,'Clave privada del estudio',270,583,17,MUTED,True)
+        rounded(draw,(87,622,453,680),12,(9,23,39),outline=accent,width=2)
+        label(draw,'••••••••••••••••',270,638,21,WHITE,True)
+    elif mode=='studio_render':
+        label(draw,'Tu proyecto está listo',270,429,23,WHITE,True)
+        rounded(draw,(87,485,453,560),15,accent)
+        label(draw,'GENERAR MI REEL',270,512,21,BASE_BG,True)
+        draw.line((270,577,270,629),fill=accent,width=5)
+        draw.polygon([(257,621),(283,621),(270,639)],fill=accent)
+        label(draw,'GITHUB ACTIONS',270,657,20,WHITE,True)
+        label(draw,'Piper + FFmpeg',270,691,16,accent)
+    elif mode=='studio_results':
+        label(draw,'Tus renders',270,419,24,WHITE,True)
+        rounded(draw,(80,474,460,535),12,(11,29,47),outline=(55,98,129))
+        label(draw,'En cola   →   Generando',270,492,19,MUTED,True)
+        rounded(draw,(80,552,460,614),12,(10,49,47),outline=(43,127,109))
+        label(draw,'✓  LISTO',270,572,23,(120,239,191),True)
+        rounded(draw,(129,639,410,697),11,accent)
+        label(draw,'DESCARGAR ZIP',270,657,19,BASE_BG,True)
+    elif mode=='studio_free':
+        label(draw,'Dos maneras de crear',270,431,21,WHITE,True)
+        rounded(draw,(84,491,456,558),12,(15,56,63),outline=accent,width=2)
+        label(draw,'Tengo el guion',270,508,21,WHITE,True)
+        label(draw,'Sin API adicional',270,535,13,(130,240,188))
+        rounded(draw,(84,579,456,653),12,(25,32,52),outline=(62,77,101),width=2)
+        label(draw,'Tengo una idea',270,595,20,WHITE,True)
+        label(draw,'Requiere API de IA',270,626,14,(254,207,147))
+
 def draw_visual(draw, scene, t, accent):
     v = scene['visual']
+    if v.startswith('studio_'):
+        draw_studio_visual(draw, v, t, accent)
+        return
     phase = 0.5 + 0.5*math.sin(t*1.8)
     bob = math.sin(t*2.1) * 10
     if v == 'question':
