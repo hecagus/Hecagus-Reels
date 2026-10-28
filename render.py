@@ -244,11 +244,13 @@ def render_frame(scene, scene_idx, total_scenes, local_time, duration, width, he
         rounded(d, (left, 82, left+max(4, 482/total_scenes), 88), 3, accent if i<=scene_idx else (52, 75, 99))
     # Intro text
     label(d, scene['heading'][:44], 270, 144, 18, accent, bold=True)
+    display_title = scene.get('display_title', scene['text'])
     title_size = 36
-    while title_size > 20 and len(fit_lines(d, scene['text'], font(title_size, True), 460)) > 4:
+    max_title_lines = 2 if scene['visual'].startswith('studio_') else 4
+    while title_size > 20 and len(fit_lines(d, display_title, font(title_size, True), 460)) > max_title_lines:
         title_size -= 1
-    # Ajuste de tipografía según longitud de texto.
-    text_block(d, scene['text'], 211, title_size, WHITE, max_width=460, max_lines=4)
+    # Título compacto en tutoriales: no invade la maqueta de la web.
+    text_block(d, display_title, 211, title_size, WHITE, max_width=460, max_lines=max_title_lines)
     draw_visual(d, scene, t, accent)
     # Subtitle line for the whole scene. This is explicitly NOT word-aligned.
     rounded(d, (23, 783, 517, 890), 15, (16, 30, 47), outline=(36, 68, 90), width=2)
