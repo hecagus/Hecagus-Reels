@@ -1,4 +1,5 @@
 name: Generar reel con Piper es-MX
+run-name: Reel ${{ inputs.folio || 'manual' }}
 
 on:
   workflow_dispatch:
@@ -16,6 +17,11 @@ on:
         required: false
         type: string
         default: 'Los videos pueden tener narracion sin pagar una API de voz.'
+      folio:
+        description: 'Identificador de la solicitud web'
+        required: false
+        type: string
+        default: manual
       velocidad:
         description: 'Velocidad de narracion'
         required: true
