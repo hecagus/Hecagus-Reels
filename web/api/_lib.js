@@ -26,17 +26,43 @@ export function sameOrigin(req) {
     return new URL(origin).host === host && new URL(origin).protocol === 'https:';
   } catch {return false;}
 }
-export function authorized(req) {
-  const configured = process.env.HEC_ACCESS_KEY;
-  const provided = req.headers['x-hec-key'];
-  if (!configured || configured.length < 16 || typeof provided !== 'string' || !provided) return false;
-  const left = createHash('sha256').update(configured).digest();
-  const right = createHash('sha256').update(provided).digest();
-  return timingSafeEqual(left,right);
+// Session key stays only on Vercel. Existing HEC_ACCESS_KEY is accepted as
+// a migration fallback; visitors never enter it or receive it in JavaScript.
+export function sessionKey() {
+  const secret=process.env.HEC_SESSION_SECRET || process.env.HEC_ACCESS_KEY || process.env.GITHUB_TOKEN;
+  return typeof secret==='string' && secret.length>=16 ? secret : null;
 }
-export function guard(req, res) {
-  if (!sameOrigin(req)) { respond(res, 403, {error:'Origen no permitido.'}); return false; }
-  if (!authorized(req)) { respond(res, 401, {error:'Clave incorrecta o no configurada.'}); return false; }
+export function seal(payload) {
+  const secret=sessionKey();
+  if(!secret)throw Object.assign(new Error('Falta secreto de sesión en el servidor.'),{http:503});
+  const value=Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature=createHmac('sha256',secret).update('session:'+value).digest('hex');
+  return value+'.'+signature;
+}
+export function unseal(value) {
+  if(!sessionKey()||typeof value!=='string'||value.length>2000)return null;
+  const [data,sig,...extra]=value.split('.');
+  if(extra.length||!data||!sig||!/^[a-f0-9]{64}$/.test(sig)||!/^[A-Za-z0-9_-]+$/.test(data))return null;
+  const expected=createHmac('sha256',sessionKey()).update('session:'+data).digest('hex');
+  if(!timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))return null;
+  try {
+    const payload=JSON.parse(Buffer.from(data,'base64url').toString('utf8'));
+    return Number.isSafeInteger(payload.exp) && payload.exp>Date.now() ? payload : null;
+  }catch {return null;}
+}
+export function cookies(req) {
+  return Object.fromEntries(String(req.headers.cookie||'').split(';').map(part=>{
+    const i=part.indexOf('=');
+    return i<0?[]:[part.slice(0,i).trim(),part.slice(i+1).trim()];
+  }).filter(part=>part.length===2));
+}
+export function ownerSession(req) {
+  const data=unseal(cookies(req).hec_session);
+  return data?.login==='hecagus' && Number.isSafeInteger(data.id) ? data : null;
+}
+export function guard(req,res) {
+  if(!sameOrigin(req)) {respond(res,403,{error:'Origen no permitido.'});return false;}
+  if(!ownerSession(req)) {respond(res,401,{error:'Inicia sesión con tu cuenta de GitHub para generar y consultar videos.'});return false;}
   return true;
 }
 export async function readBody(req, max=4000) {
@@ -90,12 +116,12 @@ export function signedDownload(run) {
   const id=String(run);
   if(!/^\d{1,16}$/.test(id))return null;
   const exp=String(Math.floor(Date.now()/1000)+120);
-  const sig=createHmac('sha256',process.env.HEC_ACCESS_KEY||'not-configured').update(id+':'+exp).digest('hex');
+  const sig=createHmac('sha256',sessionKey()||'not-configured').update(id+':'+exp).digest('hex');
   return '/api/download?run='+id+'&exp='+exp+'&sig='+sig;
 }
 export function verifySignedDownload(id,exp,sig){
-  if(!process.env.HEC_ACCESS_KEY||!/^\d{1,16}$/.test(id||'')||!/^\d{10,12}$/.test(exp||'')||!/^[a-f0-9]{64}$/.test(sig||''))return false;
+  if(!sessionKey()||!/^\d{1,16}$/.test(id||'')||!/^\d{10,12}$/.test(exp||'')||!/^[a-f0-9]{64}$/.test(sig||''))return false;
   if(Number(exp)<Date.now()/1000||Number(exp)>Date.now()/1000+130)return false;
-  const digest=createHmac('sha256',process.env.HEC_ACCESS_KEY).update(id+':'+exp).digest('hex');
+  const digest=createHmac('sha256',sessionKey()).update(id+':'+exp).digest('hex');
   return timingSafeEqual(Buffer.from(digest),Buffer.from(sig));
 }
