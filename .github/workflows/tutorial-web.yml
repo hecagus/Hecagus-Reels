@@ -1,0 +1,58 @@
+name: Tutorial de HecAgus Reels con voz Piper
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'examples/tutorial-web.json'
+
+permissions:
+  contents: read
+
+jobs:
+  renderizar-tutorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+          python -m pip install -r requirements.txt
+      - name: Verificar renderizado
+        run: python -m unittest discover -s tests -v
+      - name: Cache de voz mexicana
+        id: voice-cache
+        uses: actions/cache@v4
+        with:
+          path: voices/es_MX-claude-high.onnx*
+          key: piper-es-mx-claude-high-v1
+      - name: Descargar modelo Piper
+        if: steps.voice-cache.outputs.cache-hit != 'true'
+        run: python -m piper.download_voices es_MX-claude-high --data-dir voices
+      - name: Generar tutorial
+        run: |
+          python render.py --storyboard examples/tutorial-web.json \
+            --out output/tutorial-hecagus-reels.mp4 \
+            --piper-model voices/es_MX-claude-high.onnx \
+            --resolution 540x960 --fps 18 --speech-rate 1.05
+      - name: Entregar MP4, portada y subtitulos
+        uses: actions/upload-artifact@v4
+        with:
+          name: TUTORIAL-HecAgus-Reels
+          path: |
+            output/tutorial-hecagus-reels.mp4
+            output/tutorial-hecagus-reels_portada.png
+            output/tutorial-hecagus-reels.srt
+            output/tutorial-hecagus-reels_titulo.txt
+            output/tutorial-hecagus-reels_descripcion.txt
+          retention-days: 7
+          if-no-files-found: error
