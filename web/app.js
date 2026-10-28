@@ -19,6 +19,7 @@ function setBusy(value) {
 }
 function setMode(mode) {
   state.mode=mode;
+  els.start.innerHTML=mode==='idea'?'Crear reel desde idea <span aria-hidden="true">➜</span>':'Generar mi reel <span aria-hidden="true">➜</span>';
   $('mode-idea').classList.toggle('is-active',mode==='idea');
   $('mode-script').classList.toggle('is-active',mode==='script');
   $('mode-idea').setAttribute('aria-pressed',mode==='idea');
@@ -142,8 +143,14 @@ async function start() {
  if(state.busy)return;
  setBusy(true);
  try{
+   if(state.mode==='idea' && !els.script.value.trim()){
+     if(els.idea.value.trim().length<8)throw Error('Escribe una idea de al menos 8 caracteres.');
+     message('Convirtiendo tu idea en guion con IA...');
+     const draft=await api('/api/script',{method:'POST',body:{idea:els.idea.value.trim()}});
+     els.script.value=validate(draft.texto);
+     updatePreview();
+   }
    const text=validate(els.script.value);
-   if(state.mode==='idea' && !els.script.value.trim())throw Error('Pulsa Crear guion con IA, o escribe la narración por escenas.');
    message('Enviando el trabajo a GitHub...');
    const id='w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
    const run=await api('/api/jobs',{method:'POST',body:{texto:text,velocidad:els.rate.value,folio:id}});
