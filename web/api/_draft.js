@@ -89,7 +89,15 @@ export function buildDraft(idea) {
     scenes=entry.scenes;
     topic=entry.topic;
   } else {
-    topic=clean.length>55?clean.slice(0,52).trimEnd()+'…':clean;
+    // Acorta el asunto sin generar palabras gigantes ni romper los límites del renderer.
+    const usableWords=clean.split(' ').filter(word=>word.length<=25);
+    const selected=[];
+    for (const word of usableWords) {
+      if ([...selected,word].join(' ').length>29) break;
+      selected.push(word);
+    }
+    topic=selected.join(' ')||'un tema nuevo';
+    if(topic!==clean)topic+='…';
     scenes=[
       'Hoy vamos a hablar de '+topic+'. Empecemos por definir de qué se trata.',
       'Primero identifica para qué se utiliza y qué problema busca resolver.',
