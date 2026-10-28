@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 export const REPO = 'hecagus/Hecagus-Reels';
 export const WORKFLOW = 'generar-reel.yml';
@@ -84,4 +84,18 @@ export function validateNarration(text) {
     throw Object.assign(new Error('Usa de 1 a 6 escenas (||), cada una de 2 a 105 caracteres y palabras de máximo 30.'),{http:400});
   }
   return parts.join(' || ');
+}
+
+export function signedDownload(run) {
+  const id=String(run);
+  if(!/^\d{1,16}$/.test(id))return null;
+  const exp=String(Math.floor(Date.now()/1000)+120);
+  const sig=createHmac('sha256',process.env.HEC_ACCESS_KEY||'not-configured').update(id+':'+exp).digest('hex');
+  return '/api/download?run='+id+'&exp='+exp+'&sig='+sig;
+}
+export function verifySignedDownload(id,exp,sig){
+  if(!process.env.HEC_ACCESS_KEY||!/^\d{1,16}$/.test(id||'')||!/^\d{10,12}$/.test(exp||'')||!/^[a-f0-9]{64}$/.test(sig||''))return false;
+  if(Number(exp)<Date.now()/1000||Number(exp)>Date.now()/1000+130)return false;
+  const digest=createHmac('sha256',process.env.HEC_ACCESS_KEY).update(id+':'+exp).digest('hex');
+  return timingSafeEqual(Buffer.from(digest),Buffer.from(sig));
 }
