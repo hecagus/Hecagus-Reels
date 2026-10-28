@@ -3,6 +3,7 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 export const REPO = 'hecagus/Hecagus-Reels';
 export const WORKFLOW = 'generar-reel.yml';
 export const OWNER = 'hecagus';
+export const OWNER_GITHUB_ID = 132156689;
 export const NAME = 'Hecagus-Reels';
 
 export function respond(res, status, data) {
@@ -58,7 +59,7 @@ export function cookies(req) {
 }
 export function ownerSession(req) {
   const data=unseal(cookies(req).hec_session);
-  return data?.login==='hecagus' && Number.isSafeInteger(data.id) ? data : null;
+  return data?.login==='hecagus' && data.id===OWNER_GITHUB_ID ? data : null;
 }
 export function guard(req,res) {
   if(!sameOrigin(req)) {respond(res,403,{error:'Origen no permitido.'});return false;}
