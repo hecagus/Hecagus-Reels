@@ -1,0 +1,32 @@
+name: Verificar HEC REELS web
+
+on:
+  push:
+    paths:
+      - 'web/**'
+      - '.github/workflows/verificar-web.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probar-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Revisar sintaxis
+        run: |
+          node --check web/app.js
+          node --check web/api/_lib.js
+          node --check web/api/status.js
+          node --check web/api/jobs.js
+          node --check web/api/script.js
+          node --check web/api/download.js
+      - name: Ejecutar pruebas unitarias
+        working-directory: web
+        run: npm test
