@@ -32,7 +32,7 @@ En el proyecto Vercel `hecagus-reels`, Root Directory `web`, configura variables
 | `OPENAI_API_KEY` | Opcional, para creación automática de guiones mediante API de pago |
 | `OPENAI_MODEL` | Opcional, modelo disponible según tarifas de la API |
 
-Por compatibilidad, si no defines `HEC_SESSION_SECRET`, el servidor puede firmar con la antigua `HEC_ACCESS_KEY` o con `GITHUB_TOKEN` como último recurso. **Ninguno de estos valores se introduce en la web.** Después de definir `HEC_SESSION_SECRET`, la variable `HEC_ACCESS_KEY` se puede eliminar de Vercel sin afectar los renders.
+Si no defines `HEC_SESSION_SECRET`, el servidor usa `GITHUB_TOKEN` como secreto de firma hasta que configures uno independiente. **Nunca introduces esos valores en la web.** La antigua variable `HEC_ACCESS_KEY` ya no se utiliza y se puede borrar de Vercel después de desplegar esta versión.
 
 **Importante:** vuelve a desplegar Production después de editar las variables. Hasta que GitHub OAuth esté configurado, el botón «Entrar con GitHub» permanece oculto y se ofrece la opción manual en GitHub Actions. No se abre el endpoint con tu `GITHUB_TOKEN` a visitantes anónimos.
 
