@@ -19,7 +19,7 @@
   <section class="intro">
    <div class="eyebrow"><span class="live-dot"></span> ESTUDIO DE VIDEO · BETA</div>
    <h1>De una idea a un <em>reel.</em></h1>
-   <p>Escribe tu concepto o pega tu guion. La narración se procesa con Piper en español mexicano y el video se genera en GitHub, sin instalar programas.</p>
+   <p>Escribe un tema para crear un borrador gratuito por plantillas, o pega tu propio guion. Piper genera la voz en español mexicano y GitHub produce el video, sin instalar programas.</p>
   </section>
   <div class="workspace">
    <section class="panel editor" aria-labelledby="section-editor">
@@ -32,8 +32,9 @@
     <div id="idea-zone">
      <label for="idea">¿Sobre qué quieres crear un reel?</label>
      <textarea id="idea" rows="4" maxlength="350" placeholder="Ejemplo: Explicar qué es DNS usando la analogía de una agenda de teléfonos"></textarea>
-     <div class="field-foot"><span>La IA propone un guion editable. Requiere una API configurada.</span><span id="idea-count">0 / 350</span></div>
-     <button type="button" id="draft-btn" class="secondary-btn">✦ Crear guion con IA</button>
+     <div class="field-foot"><span id="idea-help">Borrador gratuito por plantillas, sin IA ni pagos.</span><span id="idea-count">0 / 350</span></div>
+     <button type="button" id="draft-btn" class="secondary-btn" aria-describedby="draft-feedback">Crear guion gratis (plantilla)</button>
+     <p id="draft-feedback" role="status" aria-live="polite" class="draft-feedback"></p>
     </div>
     <div id="script-zone" class="script-area">
      <label for="script">Narración por escenas</label>
