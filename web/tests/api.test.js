@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   validateNarration,signedDownload,verifySignedDownload,
-  seal,unseal,ownerSession,guard,sameOrigin
+  seal,unseal,ownerSession,guard,sameOrigin,OWNER_GITHUB_ID
 } from '../api/_lib.js';
 
 function mockResponse(){
@@ -30,12 +30,12 @@ test('signed links expire and cannot be modified',()=>withSecret(()=>{
  assert.equal(verifySignedDownload('123','1000000000',u.searchParams.get('sig')),false);
 }));
 test('owner session is signed and cannot be forged',()=>withSecret(()=>{
- const value=seal({login:'hecagus',id:123,exp:Date.now()+60000});
+ const value=seal({login:'hecagus',id:OWNER_GITHUB_ID,exp:Date.now()+60000});
  assert.equal(unseal(value).login,'hecagus');
- assert.equal(ownerSession({headers:{cookie:'hec_session='+value}}).id,123);
+ assert.equal(ownerSession({headers:{cookie:'hec_session='+value}}).id,OWNER_GITHUB_ID);
  assert.equal(ownerSession({headers:{cookie:'hec_session='+value.slice(0,-1)+(value.endsWith('0')?'1':'0')}}),null);
  assert.equal(ownerSession({headers:{cookie:'hec_session='+seal({login:'intruder',id:456,exp:Date.now()+60000})}}),null);
- assert.equal(unseal(seal({login:'hecagus',id:123,exp:Date.now()-1000})),null);
+ assert.equal(unseal(seal({login:'hecagus',id:OWNER_GITHUB_ID,exp:Date.now()-1000})),null);
 }));
 test('rejects foreign origin and anonymous render jobs',()=>withSecret(()=>{
  assert.equal(sameOrigin({headers:{origin:'https://attacker.example',host:'reels.example'}}),false);
@@ -43,7 +43,7 @@ test('rejects foreign origin and anonymous render jobs',()=>withSecret(()=>{
  let res=mockResponse();
  assert.equal(guard({headers:{host:'reels.example'}},res),false);
  assert.equal(res.statusCode,401);
- const ticket=seal({login:'hecagus',id:1,exp:Date.now()+60000});
+ const ticket=seal({login:'hecagus',id:OWNER_GITHUB_ID,exp:Date.now()+60000});
  res=mockResponse();
  assert.equal(guard({headers:{origin:'https://reels.example',host:'reels.example',cookie:'hec_session='+ticket}},res),true);
 }));
