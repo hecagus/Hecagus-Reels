@@ -28,6 +28,12 @@ sc.render.image_settings.file_format = "PNG"
 sc.render.image_settings.color_mode = "RGB"
 sc.render.filepath = str(out.resolve()) + "/"
 sc.render.film_transparent = False
+if os.getenv("HEC_3D_TEST") == "1":
+    sc.render.resolution_x = 120
+    sc.render.resolution_y = 214
+    sc.cycles.samples = 2
+    sc.frame_end = 2
+
 
 world = sc.world or bpy.data.worlds.new("Azul nocturno")
 sc.world = world
