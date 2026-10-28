@@ -7,37 +7,43 @@
       "heading": "PASO 1 · ABRE LA WEB",
       "text": "Abre HecAgus Reels desde el navegador de tu celular.",
       "voice": "Abre HecAgus Reels desde el navegador de tu celular.",
-      "visual": "studio_home"
+      "visual": "studio_home",
+      "display_title": "Abre HecAgus Reels"
     },
     {
       "heading": "PASO 2 · ESCRIBE TU GUIÓN",
       "text": "Selecciona Tengo el guion. Separa cada escena con dos barras verticales.",
       "voice": "Selecciona Tengo el guion. Separa cada escena con dos barras verticales.",
-      "visual": "studio_script"
+      "visual": "studio_script",
+      "display_title": "Pega tu guion"
     },
     {
       "heading": "PASO 3 · TU CONFIGURACIÓN",
       "text": "Elige la velocidad de voz y escribe tu clave privada del estudio.",
       "voice": "Elige la velocidad de voz y escribe tu clave privada del estudio.",
-      "visual": "studio_key"
+      "visual": "studio_key",
+      "display_title": "Configura la voz"
     },
     {
       "heading": "PASO 4 · GENERA EL REEL",
       "text": "Presiona Generar mi reel. GitHub crea el video con Piper y FFmpeg.",
       "voice": "Presiona Generar mi reel. GitHub crea el video con Piper y efe efe em peg.",
-      "visual": "studio_render"
+      "visual": "studio_render",
+      "display_title": "Genera el video"
     },
     {
       "heading": "PASO 5 · DESCÁRGALO",
       "text": "En Tus renders espera el estado Listo y descarga el ZIP con tu MP4.",
       "voice": "En Tus renders espera el estado Listo y descarga el archivo ZIP con tu video eme pe cuatro.",
-      "visual": "studio_results"
+      "visual": "studio_results",
+      "display_title": "Descarga tu reel"
     },
     {
       "heading": "CONSEJO · SIN API DE PAGO",
       "text": "Usa Tengo el guion para probarlo. Tengo una idea requiere una API de IA.",
       "voice": "Usa Tengo el guion para probarlo. Tengo una idea requiere una API de inteligencia artificial.",
-      "visual": "studio_free"
+      "visual": "studio_free",
+      "display_title": "Prueba sin API de IA"
     }
   ]
 }
