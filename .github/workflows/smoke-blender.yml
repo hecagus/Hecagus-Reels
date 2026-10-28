@@ -1,0 +1,38 @@
+name: Probar motor Blender 3D
+
+on:
+  pull_request:
+    paths:
+      - 'blender_scene.py'
+      - '.github/workflows/generar-reel.yml'
+      - '.github/workflows/smoke-blender.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-blender:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Blender, FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq blender ffmpeg
+      - name: Renderizar dos fotogramas reales en CPU
+        env:
+          HEC_3D_TEST: '1'
+          HEC_3D_FRAMES: output/3d_frames
+        run: |
+          blender --background --threads 2 --python blender_scene.py
+          test -s output/3d_frames/0001.png
+          test -s output/3d_frames/0002.png
+      - name: Verificar codificación MP4 vertical
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -framerate 12 \
+            -i output/3d_frames/%04d.png \
+            -c:v libx264 -pix_fmt yuv420p -frames:v 2 /tmp/hec_blender_smoke.mp4
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of default=noprint_wrappers=1 /tmp/hec_blender_smoke.mp4
