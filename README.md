@@ -1,4 +1,4 @@
-> **Estudio web disponible:** https://hecagus-reels.vercel.app · [Configuración y seguridad](web/README.md). La interfaz ya está publicada; las funciones de generación necesitan GITHUB_TOKEN y HEC_ACCESS_KEY configurados en Vercel. Para guiones automáticos desde una idea también se necesita OPENAI_API_KEY (consumo de pago).
+> **Estudio web:** https://hecagus-reels.vercel.app · [Configuración y seguridad](web/README.md). La web ya no pide una clave privada: para generar directamente se usa GitHub OAuth con acceso reservado a la cuenta hecagus (hay que configurar OAuth en Vercel). Mientras tanto, se pueden generar reels manualmente desde GitHub Actions. El modo Blender 3D es experimental.
 
 # HecAgus Reels (HEC REELS) — versión Piper español mexicano
 
@@ -70,7 +70,7 @@ Edita `examples/dns.json`: cada escena incluye `heading`, `text`, `voice` y `vis
 
 El código original de este ejemplo está bajo MIT. **Piper 1.8 se distribuye bajo GPL-3.0-or-later**; es una dependencia aparte, con sus propias obligaciones. El modelo `es_MX-claude-high` indica un dataset Apache-2.0 en su ficha; revisar condiciones del modelo y del dataset antes de redistribuirlos. El ZIP no redistribuye ni Piper ni sus pesos.
 
-No se garantiza una voz indistinguible de la humana ni video 3D/fotorrealista. La fuente `203.0.113.10` del ejemplo es IP de documentación TEST-NET-3; no corresponde a `example.com` real.
+No se garantiza una voz indistinguible de la humana ni video fotorrealista. El modo Blender 3D opcional genera una escena procedural genérica, no animaciones específicas para cada guion. La fuente `203.0.113.10` del ejemplo es IP de documentación TEST-NET-3; no corresponde a `example.com` real.
 
 ## Verificación automatizada
 
@@ -94,4 +94,4 @@ GitHub Actions instalará FFmpeg y Piper y descargará la voz **en el servidor d
 
 Coste: los ejecutores estándar de GitHub Actions son gratuitos en repositorios públicos, sujetos a políticas y límites; en repositorios privados se aplican cuotas de cómputo y almacenamiento. No son una plataforma de procesamiento ilimitado ni siempre instantánea.
 
-**Seguridad:** no pegues contraseñas, tokens ni datos personales en la narración. Usar GitHub Actions manualmente no exige secretos; para operarlo desde una web independiente sí se necesita un token de GitHub en el servidor Vercel, nunca en el navegador. Configuración detallada en [web/README.md](web/README.md).
+**Seguridad:** no pegues contraseñas, tokens ni datos personales en la narración. Usar GitHub Actions manualmente no exige secretos; para operarlo desde la web se necesita un token de GitHub en Vercel y GitHub OAuth con sesión del propietario, nunca tokens ni claves escritas en el navegador. Configuración detallada en [web/README.md](web/README.md).

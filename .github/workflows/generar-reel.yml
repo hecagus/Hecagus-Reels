@@ -22,6 +22,14 @@ on:
         required: false
         type: string
         default: manual
+      estilo:
+        description: 'Motor visual: 2D o geometría 3D procedural con Blender'
+        required: true
+        type: choice
+        default: '2d'
+        options:
+          - '2d'
+          - '3d'
       velocidad:
         description: 'Velocidad de narracion'
         required: true
@@ -83,6 +91,25 @@ jobs:
           python render.py --storyboard output/storyboard_cloud.json \
             --out output/hec_reel.mp4 --piper-model voices/es_MX-claude-high.onnx \
             --resolution 540x960 --fps 24 --speech-rate "$HEC_REEL_RATE"
+      - name: Instalar Blender para la animación 3D
+        if: ${{ inputs.estilo == '3d' }}
+        run: sudo apt-get install -y -qq blender
+      - name: Renderizar escena 3D procedural con CPU
+        if: ${{ inputs.estilo == '3d' }}
+        env:
+          HEC_3D_FRAMES: output/3d_frames
+        run: |
+          mkdir -p output/3d_frames
+          blender --background --threads 2 --python blender_scene.py
+      - name: Unir animación Blender con narración Piper
+        if: ${{ inputs.estilo == '3d' }}
+        run: |
+          ffmpeg -hide_banner -loglevel error -y -framerate 12 -i output/3d_frames/%04d.png \
+            -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p output/3d_loop.mp4
+          ffmpeg -hide_banner -loglevel error -y -stream_loop -1 -i output/3d_loop.mp4 -i output/hec_reel.mp4 \
+            -map 0:v:0 -map 1:a:0 -c:v libx264 -r 24 -preset veryfast -crf 25 \
+            -pix_fmt yuv420p -c:a copy -shortest -movflags +faststart output/hec_reel_3d.mp4
+          mv output/hec_reel_3d.mp4 output/hec_reel.mp4
       - name: Entregar video y archivos
         uses: actions/upload-artifact@v4
         with:
