@@ -36,7 +36,12 @@ export function authorized(req) {
 }
 export function guard(req, res) {
   if (!sameOrigin(req)) { respond(res, 403, {error:'Origen no permitido.'}); return false; }
-  if (!authorized(req)) { respond(res, 401, {error:'Clave incorrecta o no configurada.'}); return false; }
+  // Only activate this route when Vercel Authentication protects ALL deployments.
+  // HEC_AUTH_MODE is an additional fail-closed switch, NOT a substitute for SSO.
+  if (process.env.HEC_AUTH_MODE !== 'vercel' || !process.env.HEC_ACCESS_KEY || !process.env.GITHUB_TOKEN) {
+    respond(res, 503, {error:'Acceso mediante Vercel pendiente de activar. No se puede iniciar un render.'});
+    return false;
+  }
   return true;
 }
 export async function readBody(req, max=4000) {
