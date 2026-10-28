@@ -23,6 +23,10 @@ jobs:
         run: |
           node --check web/app.js
           node --check web/api/_lib.js
+          node --check web/api/_oauth.js
+          node --check web/api/login.js
+          node --check web/api/callback.js
+          node --check web/api/logout.js
           node --check web/api/status.js
           node --check web/api/_draft.js
           node --check web/api/draft.js
@@ -30,6 +34,8 @@ jobs:
           node --check web/api/jobs.js
           node --check web/api/script.js
           node --check web/api/download.js
+      - name: Revisar sintaxis de escena Blender
+        run: python -m py_compile blender_scene.py
       - name: Ejecutar pruebas unitarias
         working-directory: web
         run: npm test
