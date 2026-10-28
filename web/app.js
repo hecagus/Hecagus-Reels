@@ -1,9 +1,9 @@
 const $ = (id) => document.getElementById(id);
-const state = { mode: 'idea', busy: false, interval: null, current: null, aiAvailable: false, draftIdea: '', draftText: '' };
+const state = { mode: 'idea', busy: false, interval: null, current: null, aiAvailable: false, signedIn: false, loginConfigured: false, draftIdea: '', draftText: '' };
 const MAX_SCENES = 6;
 
 const els = {
-  idea: $('idea'), script: $('script'), access: $('key'), rate: $('rate'),
+  idea: $('idea'), script: $('script'), rate: $('rate'), visual: $('visual'),
   feedback: $('feedback'), preview: $('preview-text'), start: $('start-btn'),
   draft: $('draft-btn'), list: $('task-list')
 };
@@ -54,31 +54,40 @@ function updatePreview() {
   $('scene-count').textContent=list.length+' escena'+(list.length===1?'':'s');
   els.preview.textContent=list[0]||els.idea.value.trim().slice(0,110)||'Tu próxima idea empieza aquí.';
 }
-async function api(path,{method='GET',body,auth=true}={}) {
-  const key=els.access.value;
-  if(auth && key.length<16) throw Error('Introduce la clave privada del estudio (mínimo 16 caracteres).');
+async function api(path,{method='GET',body}={}) {
   const response=await fetch(path,{
-    method,cache:'no-store',
-    headers:{ ...(body?{'Content-Type':'application/json'}:{}),...(auth?{'x-hec-key':key}:{}) },
+    method,cache:'no-store',credentials:'same-origin',
+    headers:body?{'Content-Type':'application/json'}:{},
     ...(body?{body:JSON.stringify(body)}:{})
   });
   const content=await response.json().catch(()=>({}));
   if(!response.ok)throw Error(content.error||'Error HTTP '+response.status);
   return content;
 }
-async function status() {
+async function status(){
   try {
-    const x=await api('/api/status',{auth:false});
-    $('github-state').textContent=x.github&&x.access?'● Motor configurado':'● Falta configuración';
-    $('github-state').style.color=x.github&&x.access?'#8ee9ba':'#ffd18c';
-    state.aiAvailable=Boolean(x.ai);
-    $('ai-state').textContent=x.ai?'● Guiones con IA disponibles':'● Borradores gratuitos disponibles';
-    $('ai-state').style.color='#8ee9ba';
-    els.draft.textContent=x.ai?'✦ Crear guion con IA':'Crear guion gratis (plantilla)';
-    $('idea-help').textContent=x.ai?'Un modelo de IA creará escenas editables.':'Borrador automático por plantillas, sin IA ni pagos. Puedes editarlo.';
-    if(!x.github||!x.access)message('La web está publicada, pero faltan GITHUB_TOKEN o HEC_ACCESS_KEY en Vercel.');
-  }catch{
+    const x=await api('/api/status');
+    state.signedIn=Boolean(x.signedIn);
+    state.loginConfigured=Boolean(x.loginConfigured);
+    $('github-state').textContent=x.github?'● GitHub listo':'● Falta token de GitHub';
+    $('github-state').style.color=x.github?'#8ee9ba':'#ffd18c';
+    state.aiAvailable=Boolean(x.ai&&x.signedIn);
+    $('ai-state').textContent=state.aiAvailable?'● Guiones con IA disponibles':'● Borradores gratuitos disponibles';
+    els.draft.textContent=state.aiAvailable?'✦ Crear guion con IA':'Crear guion gratis (plantilla)';
+    $('idea-help').textContent=state.aiAvailable?'Un modelo de IA creará escenas editables.':'Borrador gratuito por plantillas, sin API.';
+    $('login-link').hidden=state.signedIn||!state.loginConfigured;
+    $('logout-btn').hidden=!state.signedIn;
+    $('auth-title').textContent=state.signedIn?'GitHub conectado · hecagus':'Acceso con GitHub';
+    $('auth-description').textContent=state.signedIn
+      ?'Ya puedes crear y descargar reels sin escribir claves.'
+      :state.loginConfigured?'Inicia sesión con tu cuenta hecagus una sola vez. No se solicita clave privada.'
+      :'El acceso directo todavía requiere configurar OAuth en Vercel. Puedes usar GitHub Actions de forma manual.';
+    if(state.signedIn)await fetchRuns();
+    else renderJobs([]);
+    if(!x.github)message('Falta configurar GITHUB_TOKEN en Vercel. El generador manual en GitHub Actions sigue disponible.','error');
+  }catch(err){
     $('github-state').textContent='● No se pudo consultar la configuración';
+    message(err.message,'error');
   }
 }
 function formatDate(raw) {
@@ -118,6 +127,7 @@ function renderJobs(runs) {
   }
 }
 async function fetchRuns() {
+  if(!state.signedIn)return;
   try {
     const result=await api('/api/jobs');
     renderJobs(result.runs||[]);
@@ -138,7 +148,7 @@ async function fetchRuns() {
 async function generateDraft(idea) {
   const ai=state.aiAvailable;
   const result=await api(ai?'/api/script':'/api/draft',{
-    method:'POST',body:{idea},auth:ai
+    method:'POST',body:{idea}
   });
   const text=validate(result.texto);
   els.script.value=text;
@@ -172,9 +182,10 @@ async function start() {
      await generateDraft(els.idea.value.trim());
    }
    const text=validate(els.script.value);
+   if(!state.signedIn)throw Error(state.loginConfigured?'Primero inicia sesión con GitHub para generar desde esta página.':'La conexión con GitHub todavía no está configurada. Usa el enlace GitHub Actions (manual) para generar sin claves.');
    message('Enviando el trabajo a GitHub...');
    const id='w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-   const run=await api('/api/jobs',{method:'POST',body:{texto:text,velocidad:els.rate.value,folio:id}});
+   const run=await api('/api/jobs',{method:'POST',body:{texto:text,velocidad:els.rate.value,estilo:els.visual.value,folio:id}});
    state.current={folio:run.folio,id:run.runId};
    message('Solicitud aceptada. GitHub está preparando tu video. Consulta el estado en Tus renders.','success');
    await fetchRuns();
@@ -199,29 +210,21 @@ function setup(){
     updatePreview();
   });
   els.script.addEventListener('input',updatePreview);
-  els.access.addEventListener('change',()=>{if(els.access.value.trim().length>=16)fetchRuns();});
-  $('verify-key').addEventListener('click',async()=>{
-    const target=$('key-feedback');
-    target.textContent='Comprobando...';
+  $('logout-btn').addEventListener('click',async()=>{
     try{
-      const data=await api('/api/verify',{method:'POST'});
-      target.textContent=data.message;
-      target.className='draft-feedback success';
-    }catch(e){
-      target.textContent=e.message;
-      target.className='draft-feedback error';
-    }
-  });
-  $('show-key').addEventListener('click',()=>{
-    const visible=els.access.type==='password';
-    els.access.type=visible?'text':'password';
-    $('show-key').textContent=visible?'Ocultar clave':'Mostrar clave';
-    $('show-key').setAttribute('aria-pressed',String(visible));
+      await api('/api/logout',{method:'POST'});
+      state.signedIn=false;
+      if(state.interval)clearInterval(state.interval);
+      state.interval=null;state.current=null;
+      els.list.textContent='';
+      await status();
+      message('Sesión de GitHub cerrada.','success');
+    }catch(err){message(err.message,'error');}
   });
   $('refresh-btn').addEventListener('click',fetchRuns);
   els.draft.addEventListener('click',makeDraft);
   els.start.addEventListener('click',start);
   setMode('idea');updatePreview();status();
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&els.access.value.trim().length>=16)fetchRuns();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.signedIn)fetchRuns();});
 }
 setup();
