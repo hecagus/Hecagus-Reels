@@ -27,10 +27,10 @@ export function sameOrigin(req) {
     return new URL(origin).host === host && new URL(origin).protocol === 'https:';
   } catch {return false;}
 }
-// Session key stays only on Vercel. Existing HEC_ACCESS_KEY is accepted as
-// a migration fallback; visitors never enter it or receive it in JavaScript.
+// Session signing secret stays only on Vercel. Visitors never enter secrets.
+// The server token is a fallback until a dedicated HEC_SESSION_SECRET is set.
 export function sessionKey() {
-  const secret=process.env.HEC_SESSION_SECRET || process.env.HEC_ACCESS_KEY || process.env.GITHUB_TOKEN;
+  const secret=process.env.HEC_SESSION_SECRET || process.env.GITHUB_TOKEN;
   return typeof secret==='string' && secret.length>=16 ? secret : null;
 }
 export function seal(payload) {
