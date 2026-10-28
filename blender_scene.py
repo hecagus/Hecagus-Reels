@@ -18,6 +18,12 @@ sc = bpy.context.scene
 sc.render.engine = "CYCLES"
 sc.cycles.device = "CPU"
 sc.cycles.samples = 8
+# Ubuntu's Blender package can lack OpenImageDenoise: keep CPU rendering portable.
+for layer in sc.view_layers:
+    if hasattr(layer, "cycles"):
+        layer.cycles.use_denoising = False
+if hasattr(sc.cycles, "use_denoising"):
+    sc.cycles.use_denoising = False
 sc.render.resolution_x = 360
 sc.render.resolution_y = 640
 sc.render.resolution_percentage = 100
