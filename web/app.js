@@ -55,7 +55,7 @@ function updatePreview() {
   els.preview.textContent=list[0]||els.idea.value.trim().slice(0,110)||'Tu próxima idea empieza aquí.';
 }
 async function api(path,{method='GET',body,auth=true}={}) {
-  const key=els.access.value.trim();
+  const key=els.access.value;
   if(auth && key.length<16) throw Error('Introduce la clave privada del estudio (mínimo 16 caracteres).');
   const response=await fetch(path,{
     method,cache:'no-store',
