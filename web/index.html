@@ -47,7 +47,12 @@
     </div>
     <div class="credential">
       <div><label for="key">Clave privada del estudio</label><span>Solo se usa para autorizar tus renders. No es tu token de GitHub.</span></div>
-      <input type="password" id="key" minlength="16" autocomplete="off" placeholder="Clave de acceso configurada en Vercel"/>
+      <input type="password" id="key" minlength="16" autocomplete="off" placeholder="Valor exacto de HEC_ACCESS_KEY"/>
+      <div class="verify-row">
+        <button type="button" id="verify-key" class="verify-btn">Comprobar clave</button>
+        <button type="button" id="show-key" class="verify-btn" aria-pressed="false">Mostrar clave</button>
+      </div>
+      <p id="key-feedback" role="status" aria-live="polite" class="draft-feedback"></p>
     </div>
     <button type="button" id="start-btn" class="primary-btn">Generar mi reel <span aria-hidden="true">➜</span></button>
     <p id="feedback" role="status" aria-live="polite" class="feedback"></p>
