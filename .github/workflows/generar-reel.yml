@@ -1,0 +1,91 @@
+name: Generar reel con Piper es-MX
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'Crear con tu texto o ejecutar el ejemplo DNS'
+        required: true
+        type: choice
+        default: texto
+        options:
+          - texto
+          - demo_dns
+      texto:
+        description: 'Narracion literal. Separa escenas con || (maximo 6; 105 caracteres cada una)'
+        required: false
+        type: string
+        default: 'Los videos pueden tener narracion sin pagar una API de voz.'
+      velocidad:
+        description: 'Velocidad de narracion'
+        required: true
+        type: choice
+        default: '1.00'
+        options:
+          - '0.95'
+          - '1.00'
+          - '1.05'
+          - '1.10'
+
+permissions:
+  contents: read
+
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Obtener proyecto
+        uses: actions/checkout@v4
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Dependencias de sistema
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+      - name: Instalar librerias
+        run: python -m pip install -r requirements.txt
+      - name: Probar codigo
+        run: python -m unittest discover -s tests -v
+      - name: Recuperar modelo de voz desde cache
+        id: voice-cache
+        uses: actions/cache@v4
+        with:
+          path: voices/es_MX-claude-high.onnx*
+          key: piper-es-mx-claude-high-v1
+      - name: Descargar voz Piper en el servidor GitHub
+        if: steps.voice-cache.outputs.cache-hit != 'true'
+        run: python -m piper.download_voices es_MX-claude-high --data-dir voices
+      - name: Preparar escenas
+        env:
+          HEC_REEL_TEXT: ${{ inputs.texto }}
+          HEC_REEL_MODE: ${{ inputs.modo }}
+        run: |
+          mkdir -p output
+          if [ "$HEC_REEL_MODE" = "demo_dns" ]; then
+            cp examples/dns.json output/storyboard_cloud.json
+          else
+            python cloud_storyboard.py --out output/storyboard_cloud.json
+          fi
+      - name: Renderizar en nube
+        env:
+          HEC_REEL_RATE: ${{ inputs.velocidad }}
+        run: |
+          python render.py --storyboard output/storyboard_cloud.json \
+            --out output/hec_reel.mp4 --piper-model voices/es_MX-claude-high.onnx \
+            --resolution 540x960 --fps 24 --speech-rate "$HEC_REEL_RATE"
+      - name: Entregar video y archivos
+        uses: actions/upload-artifact@v4
+        with:
+          name: HEC-REELS-${{ github.run_number }}
+          path: |
+            output/hec_reel.mp4
+            output/hec_reel_portada.png
+            output/hec_reel.srt
+            output/hec_reel_titulo.txt
+            output/hec_reel_descripcion.txt
+          retention-days: 7
+          if-no-files-found: error
