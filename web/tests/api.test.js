@@ -33,7 +33,7 @@ test('owner session is signed and cannot be forged',()=>withSecret(()=>{
  const value=seal({login:'hecagus',id:123,exp:Date.now()+60000});
  assert.equal(unseal(value).login,'hecagus');
  assert.equal(ownerSession({headers:{cookie:'hec_session='+value}}).id,123);
- assert.equal(ownerSession({headers:{cookie:'hec_session='+value.slice(0,-1)+'0'}}),null);
+ assert.equal(ownerSession({headers:{cookie:'hec_session='+value.slice(0,-1)+(value.endsWith('0')?'1':'0')}}),null);
  assert.equal(ownerSession({headers:{cookie:'hec_session='+seal({login:'intruder',id:456,exp:Date.now()+60000})}}),null);
  assert.equal(unseal(seal({login:'hecagus',id:123,exp:Date.now()-1000})),null);
 }));
