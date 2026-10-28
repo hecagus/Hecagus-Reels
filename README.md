@@ -1,3 +1,5 @@
+> **Estudio web disponible:** https://hecagus-reels.vercel.app · [Configuración y seguridad](web/README.md). La interfaz ya está publicada; las funciones de generación necesitan GITHUB_TOKEN y HEC_ACCESS_KEY configurados en Vercel. Para guiones automáticos desde una idea también se necesita OPENAI_API_KEY (consumo de pago).
+
 # HEC REELS — versión Piper español mexicano
 
 **Implementación original e independiente.** No se incluye código privativo de DASDINGO.
@@ -86,10 +88,10 @@ Este repositorio incluye `.github/workflows/generar-reel.yml`. Cuando el proyect
 2. Pulsa **Run workflow**, elige `texto` y escribe la narración. Para varias escenas, sepáralas con `||` (hasta 6 escenas de 105 caracteres cada una).
 3. Vuelve a la ejecución completada → **Artifacts** → **HEC-REELS-...** y descarga el archivo que contiene video MP4, portada y subtítulos.
 
-**Importante:** el texto se narra literalmente; no existe todavía un modelo de IA que redacte guiones o elija visuales según la idea. El modo `texto` usa una animación abstracta genérica, mientras que `demo_dns` reproduce el storyboard técnico del ejemplo. No hay un sitio web con un botón para generar directamente en esta versión, solo la interfaz de GitHub Actions.
+**Importante:** el modo `texto` narra literalmente y usa animaciones abstractas. La **web** permite transformar una idea en escenas cortas con la API de OpenAI opcional (no es parte de Piper ni está incluida en ChatGPT Plus). Si no se configura la API, se puede pegar directamente el guion. El render todavía no genera imágenes específicas ni secuencias cinematográficas.
 
 GitHub Actions instalará FFmpeg y Piper y descargará la voz **en el servidor de GitHub**, no en tu equipo. Las descargas se pueden guardar en caché para siguientes ejecuciones. Por defecto, los resultados quedan como artifact 7 días.
 
 Coste: los ejecutores estándar de GitHub Actions son gratuitos en repositorios públicos, sujetos a políticas y límites; en repositorios privados se aplican cuotas de cómputo y almacenamiento. No son una plataforma de procesamiento ilimitado ni siempre instantánea.
 
-**Seguridad:** no pegues contraseñas, tokens ni datos personales en la narración: el texto será visible en la interfaz de ejecuciones y los logs pueden ser accesibles según visibilidad/permisos. No se necesita añadir secretos ni tokens externos.
+**Seguridad:** no pegues contraseñas, tokens ni datos personales en la narración. Usar GitHub Actions manualmente no exige secretos; para operarlo desde una web independiente sí se necesita un token de GitHub en el servidor Vercel, nunca en el navegador. Configuración detallada en [web/README.md](web/README.md).
