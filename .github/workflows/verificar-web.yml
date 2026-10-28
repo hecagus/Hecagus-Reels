@@ -24,6 +24,8 @@ jobs:
           node --check web/app.js
           node --check web/api/_lib.js
           node --check web/api/status.js
+          node --check web/api/_draft.js
+          node --check web/api/draft.js
           node --check web/api/jobs.js
           node --check web/api/script.js
           node --check web/api/download.js
