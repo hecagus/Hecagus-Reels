@@ -1,5 +1,5 @@
 import {randomBytes,timingSafeEqual} from 'node:crypto';
-import {method,respond,cookies,seal,sessionKey,sameOrigin} from './_lib.js';
+import {method,respond,cookies,seal,sessionKey,sameOrigin,OWNER_GITHUB_ID} from './_lib.js';
 
 const BASE='https://hecagus-reels.vercel.app';
 const CALLBACK=BASE+'/api/callback';
@@ -52,7 +52,7 @@ export async function callback(req,res){
     });
     if(!userResponse.ok)throw Error('No se pudo comprobar la identidad de GitHub.');
     const user=await userResponse.json();
-    if(user.login?.toLowerCase()!=='hecagus'||!Number.isSafeInteger(user.id)){
+    if(user.login?.toLowerCase()!=='hecagus'||user.id!==OWNER_GITHUB_ID){
       return respond(res,403,{error:'Este estudio solo permite generar con la cuenta propietaria hecagus.'});
     }
     const exp=Date.now()+7*24*60*60*1000;
