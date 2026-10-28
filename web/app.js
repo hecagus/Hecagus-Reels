@@ -182,7 +182,7 @@ async function start() {
      await generateDraft(els.idea.value.trim());
    }
    const text=validate(els.script.value);
-   if(!state.signedIn)throw Error(state.loginConfigured?'Primero inicia sesión con GitHub para generar desde esta página.':'La conexión con GitHub todavía no está configurada. Usa el enlace GitHub Actions (manual) para generar sin claves.');
+   if(!state.signedIn)throw Error(state.loginConfigured?'Primero inicia sesión con GitHub para generar desde esta página.':'La conexión con GitHub todavía no está configurada. Usa «Copiar guion» y después «GitHub Actions (manual)» para generar sin claves.');
    message('Enviando el trabajo a GitHub...');
    const id='w'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
    const run=await api('/api/jobs',{method:'POST',body:{texto:text,velocidad:els.rate.value,estilo:els.visual.value,folio:id}});
@@ -210,6 +210,15 @@ function setup(){
     updatePreview();
   });
   els.script.addEventListener('input',updatePreview);
+  $('copy-script').addEventListener('click',async()=>{
+    try{
+      const text=validate(els.script.value);
+      await navigator.clipboard.writeText(text);
+      message('Guion copiado. Abre GitHub Actions (manual), pulsa Run workflow y pega el texto en Narración.','success');
+    }catch(err){
+      message(err instanceof TypeError?'Escribe primero un guion.':err.message,'error');
+    }
+  });
   $('logout-btn').addEventListener('click',async()=>{
     try{
       await api('/api/logout',{method:'POST'});
