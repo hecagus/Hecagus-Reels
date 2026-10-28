@@ -1,0 +1,37 @@
+{
+  "title": "¿Qué ocurre cuando escribes una web?",
+  "description": "Una explicación visual de DNS en pocos segundos. Demo técnica original de HEC REELS.",
+  "accent": "#4FE0F7",
+  "scenes": [
+    {
+      "heading": "UNA PREGUNTA SIMPLE",
+      "text": "¿Cómo encuentra tu teléfono una página web?",
+      "voice": "¿Cómo encuentra tu teléfono una página web?",
+      "visual": "question"
+    },
+    {
+      "heading": "PASO 1 · EL NOMBRE",
+      "text": "Escribes ejemplo.com. Pero las redes necesitan direcciones IP.",
+      "voice": "Escribes ejemplo punto com. Pero las redes necesitan direcciones IP.",
+      "visual": "domain"
+    },
+    {
+      "heading": "PASO 2 · DNS",
+      "text": "Tu equipo pregunta a un servidor DNS por la dirección.",
+      "voice": "Tu equipo pregunta a un servidor de ene ese por la dirección.",
+      "visual": "resolve"
+    },
+    {
+      "heading": "PASO 3 · LA CONEXIÓN",
+      "text": "Con la IP recibida, el navegador conecta con el servidor.",
+      "voice": "Con la dirección i pe recibida, el navegador conecta con el servidor.",
+      "visual": "connect"
+    },
+    {
+      "heading": "LA IDEA IMPORTANTE",
+      "text": "DNS no entrega la página. Te ayuda a localizarla.",
+      "voice": "DNS no entrega la página. Te ayuda a localizarla.",
+      "visual": "summary"
+    }
+  ]
+}
