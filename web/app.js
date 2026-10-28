@@ -1,9 +1,9 @@
 const $ = (id) => document.getElementById(id);
-const state = { mode: 'idea', busy: false, interval: null, current: null, aiAvailable: false, draftIdea: '', draftText: '' };
+const state = { mode: 'idea', busy: false, interval: null, current: null, siteReady: false, aiAvailable: false, draftIdea: '', draftText: '' };
 const MAX_SCENES = 6;
 
 const els = {
-  idea: $('idea'), script: $('script'), access: $('key'), rate: $('rate'),
+  idea: $('idea'), script: $('script'), rate: $('rate'),
   feedback: $('feedback'), preview: $('preview-text'), start: $('start-btn'),
   draft: $('draft-btn'), list: $('task-list')
 };
@@ -19,7 +19,7 @@ function draftMessage(value, type='') {
 }
 function setBusy(value) {
   state.busy = value;
-  els.start.disabled = value;
+  els.start.disabled = value || !state.siteReady;
   els.draft.disabled = value;
 }
 function setMode(mode) {
@@ -54,12 +54,10 @@ function updatePreview() {
   $('scene-count').textContent=list.length+' escena'+(list.length===1?'':'s');
   els.preview.textContent=list[0]||els.idea.value.trim().slice(0,110)||'Tu próxima idea empieza aquí.';
 }
-async function api(path,{method='GET',body,auth=true}={}) {
-  const key=els.access.value;
-  if(auth && key.length<16) throw Error('Introduce la clave privada del estudio (mínimo 16 caracteres).');
+async function api(path,{method='GET',body}={}) {
   const response=await fetch(path,{
     method,cache:'no-store',
-    headers:{ ...(body?{'Content-Type':'application/json'}:{}),...(auth?{'x-hec-key':key}:{}) },
+    headers:body?{'Content-Type':'application/json'}:{},
     ...(body?{body:JSON.stringify(body)}:{})
   });
   const content=await response.json().catch(()=>({}));
@@ -69,16 +67,23 @@ async function api(path,{method='GET',body,auth=true}={}) {
 async function status() {
   try {
     const x=await api('/api/status',{auth:false});
-    $('github-state').textContent=x.github&&x.access?'● Motor configurado':'● Falta configuración';
-    $('github-state').style.color=x.github&&x.access?'#8ee9ba':'#ffd18c';
+    state.siteReady=Boolean(x.ready);
+    els.start.disabled=!state.siteReady;
+    $('github-state').textContent=state.siteReady?'● Motor listo':'● Protección de cuenta pendiente';
+    $('github-state').style.color=state.siteReady?'#8ee9ba':'#ffd18c';
+    $('auth-feedback').textContent=state.siteReady?'Sesión de Vercel habilitada.':'Falta habilitar Vercel Authentication en todos los despliegues.';
+    $('auth-feedback').className='draft-feedback '+(state.siteReady?'success':'error');
     state.aiAvailable=Boolean(x.ai);
     $('ai-state').textContent=x.ai?'● Guiones con IA disponibles':'● Borradores gratuitos disponibles';
     $('ai-state').style.color='#8ee9ba';
     els.draft.textContent=x.ai?'✦ Crear guion con IA':'Crear guion gratis (plantilla)';
     $('idea-help').textContent=x.ai?'Un modelo de IA creará escenas editables.':'Borrador automático por plantillas, sin IA ni pagos. Puedes editarlo.';
-    if(!x.github||!x.access)message('La web está publicada, pero faltan GITHUB_TOKEN o HEC_ACCESS_KEY en Vercel.');
+    if(!state.siteReady)message('El acceso sin contraseña todavía no está activado.');
+    if(state.siteReady)fetchRuns();
   }catch{
-    $('github-state').textContent='● No se pudo consultar la configuración';
+    state.siteReady=false;
+    els.start.disabled=true;
+    $('github-state').textContent='● No se pudo comprobar la protección de Vercel';
   }
 }
 function formatDate(raw) {
@@ -164,6 +169,7 @@ async function makeDraft(){
 }
 async function start() {
  if(state.busy)return;
+ if(!state.siteReady){message('Acceso con Vercel pendiente de activar.','error');return;}
  setBusy(true);
  try{
    if(state.mode==='idea' && !els.script.value.trim()){
@@ -199,29 +205,10 @@ function setup(){
     updatePreview();
   });
   els.script.addEventListener('input',updatePreview);
-  els.access.addEventListener('change',()=>{if(els.access.value.trim().length>=16)fetchRuns();});
-  $('verify-key').addEventListener('click',async()=>{
-    const target=$('key-feedback');
-    target.textContent='Comprobando...';
-    try{
-      const data=await api('/api/verify',{method:'POST'});
-      target.textContent=data.message;
-      target.className='draft-feedback success';
-    }catch(e){
-      target.textContent=e.message;
-      target.className='draft-feedback error';
-    }
-  });
-  $('show-key').addEventListener('click',()=>{
-    const visible=els.access.type==='password';
-    els.access.type=visible?'text':'password';
-    $('show-key').textContent=visible?'Ocultar clave':'Mostrar clave';
-    $('show-key').setAttribute('aria-pressed',String(visible));
-  });
   $('refresh-btn').addEventListener('click',fetchRuns);
   els.draft.addEventListener('click',makeDraft);
   els.start.addEventListener('click',start);
   setMode('idea');updatePreview();status();
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&els.access.value.trim().length>=16)fetchRuns();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.siteReady)fetchRuns();});
 }
 setup();
