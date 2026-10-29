@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'blender_scene.py'
+      - 'scene_director.py'
+      - 'compose_3d.py'
+      - 'render.py'
+      - 'tests/test_scene_director.py'
       - '.github/workflows/generar-reel.yml'
       - '.github/workflows/smoke-blender.yml'
   workflow_dispatch:
@@ -17,6 +21,10 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+      - name: Probar director de escenas sin IA
+        run: |
+          python -m unittest discover -s tests -p 'test_scene_director.py' -v
+          python -m py_compile scene_director.py compose_3d.py blender_scene.py render.py
       - name: Instalar Blender, FFmpeg
         run: |
           sudo apt-get update -qq
@@ -25,14 +33,22 @@ jobs:
         env:
           HEC_3D_TEST: '1'
           HEC_3D_FRAMES: output/3d_frames
+          HEC_3D_PLAN: examples/scene_plan_smoke.json
         run: |
           blender --background --threads 2 --python blender_scene.py
-          test -s output/3d_frames/0001.png
-          test -s output/3d_frames/0002.png
-      - name: Verificar codificación MP4 vertical
+          test -s output/3d_frames/scene_01/0001.png
+          test -s output/3d_frames/scene_01/0002.png
+          test -s output/3d_frames/scene_02/0001.png
+          test -s output/3d_frames/scene_02/0002.png
+      - name: Unir escenas diferentes y validar H264 con AAC
         run: |
-          ffmpeg -hide_banner -loglevel error -y -framerate 12 \
-            -i output/3d_frames/%04d.png \
-            -c:v libx264 -pix_fmt yuv420p -frames:v 2 /tmp/hec_blender_smoke.mp4
+          ffmpeg -hide_banner -loglevel error -y -f lavfi -i color=c=black:s=120x214:r=24 \
+            -f lavfi -i sine=frequency=440:sample_rate=24000 \
+            -t 2 -c:v libx264 -pix_fmt yuv420p -c:a aac /tmp/mock_voice.mp4
+          python compose_3d.py --plan examples/scene_plan_smoke.json \
+            --frames output/3d_frames --narrated-video /tmp/mock_voice.mp4 \
+            --out /tmp/hec_blender_smoke.mp4
           ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of default=noprint_wrappers=1 /tmp/hec_blender_smoke.mp4
+          ffprobe -v error -select_streams a:0 -show_entries stream=codec_name \
             -of default=noprint_wrappers=1 /tmp/hec_blender_smoke.mp4

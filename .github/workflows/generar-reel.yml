@@ -91,25 +91,31 @@ jobs:
           python render.py --storyboard output/storyboard_cloud.json \
             --out output/hec_reel.mp4 --piper-model voices/es_MX-claude-high.onnx \
             --resolution 540x960 --fps 24 --speech-rate "$HEC_REEL_RATE"
-      - name: Instalar Blender para la animación 3D
+      - name: Preparar plan visual por escena
+        if: ${{ inputs.estilo == '3d' }}
+        run: |
+          python scene_director.py --storyboard output/storyboard_cloud.json \
+            --timing output/hec_reel_timing.json --out output/scene_plan.json
+      - name: Instalar Blender 3D
         if: ${{ inputs.estilo == '3d' }}
         run: sudo apt-get install -y -qq blender
-      - name: Renderizar escena 3D procedural con CPU
+      - name: Renderizar objetos distintos por escena
         if: ${{ inputs.estilo == '3d' }}
         env:
           HEC_3D_FRAMES: output/3d_frames
-        run: |
-          mkdir -p output/3d_frames
-          blender --background --threads 2 --python blender_scene.py
-      - name: Unir animación Blender con narración Piper
+          HEC_3D_PLAN: output/scene_plan.json
+        run: blender --background --threads 2 --python blender_scene.py
+      - name: Componer secuencias 3D al ritmo de Piper
         if: ${{ inputs.estilo == '3d' }}
         run: |
-          ffmpeg -hide_banner -loglevel error -y -framerate 12 -i output/3d_frames/%04d.png \
-            -c:v libx264 -preset veryfast -crf 26 -pix_fmt yuv420p output/3d_loop.mp4
-          ffmpeg -hide_banner -loglevel error -y -stream_loop -1 -i output/3d_loop.mp4 -i output/hec_reel.mp4 \
-            -map 0:v:0 -map 1:a:0 -c:v libx264 -r 24 -preset veryfast -crf 25 \
-            -pix_fmt yuv420p -c:a copy -shortest -movflags +faststart output/hec_reel_3d.mp4
+          python compose_3d.py --plan output/scene_plan.json \
+            --frames output/3d_frames --narrated-video output/hec_reel.mp4 \
+            --out output/hec_reel_3d.mp4
           mv output/hec_reel_3d.mp4 output/hec_reel.mp4
+          ffmpeg -hide_banner -loglevel error -y -i output/3d_frames/scene_01/0001.png \
+            -vf scale=540:960 -frames:v 1 output/hec_reel_portada.png
+          ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
+            -of default=noprint_wrappers=1 output/hec_reel.mp4
       - name: Entregar video y archivos
         uses: actions/upload-artifact@v4
         with:
@@ -120,5 +126,7 @@ jobs:
             output/hec_reel.srt
             output/hec_reel_titulo.txt
             output/hec_reel_descripcion.txt
+            output/hec_reel_timing.json
+            output/scene_plan.json
           retention-days: 7
           if-no-files-found: error

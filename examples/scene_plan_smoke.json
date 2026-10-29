@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "mode": "rules-v1",
+  "scenes": [
+    {
+      "index": 1,
+      "kind": "payment",
+      "label": "Terminal y pago",
+      "start": 0,
+      "duration": 0.75
+    },
+    {
+      "index": 2,
+      "kind": "network",
+      "label": "Red y conexiones",
+      "start": 0.75,
+      "duration": 1.1
+    }
+  ],
+  "total_duration": 1.85
+}
