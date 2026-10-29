@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080d16">
+<title>HEC REELS · Video con Gemini Omni</title>
+<link rel="stylesheet" href="/styles.css">
+<script src="/omni.js" type="module" defer></script>
+</head>
+<body>
+<header class="topbar">
+ <div class="brand"><span class="brand-icon">H<span>R</span></span><span>HecAgus <strong>REELS</strong><small>Estudio con Gemini Omni · beta</small></span></div>
+ <a class="ghost-link" href="/">Volver al estudio</a>
+</header>
+<main class="main">
+<section class="intro">
+ <div class="eyebrow">GENERACIÓN DE VIDEO CON IA · GOOGLE</div>
+ <h1>De una idea a un <em>MP4.</em></h1>
+ <p>Escribe una idea. Gemini genera el guion, las escenas con audio y el montaje final. La generación es de pago y requiere iniciar sesión con GitHub. No hay prompts que copiar entre plataformas.</p>
+</section>
+<div class="workspace">
+<section class="panel editor">
+ <div class="section-top"><span class="section-index">01 / PRODUCCIÓN</span><span class="meta">VERTICAL 9:16</span></div>
+ <h2>Tu idea</h2>
+ <label for="idea-omni">¿Qué historia quieres contar?</label>
+ <textarea id="idea-omni" maxlength="350" rows="5" placeholder="ChatGPT regaña a HecAgus por empezar demasiados proyectos. Él baja la cabeza y solo dice: Sí, Chat. Al final se le ocurre otro proyecto."></textarea>
+ <div class="field-foot"><span>La IA escribirá los diálogos y decidirá las tomas.</span><span id="counter-omni">0/350</span></div>
+ <div class="options"><div class="option"><label for="length-omni">Duración final</label>
+  <select id="length-omni"><option value="6" selected>Prueba · 6 segundos</option><option value="60">Video · 60 segundos</option></select>
+ </div></div>
+ <p id="price-omni" class="feedback">Costo estimado de video a 720p: aproximadamente US$0.60 + guion. El cobro real depende del consumo.</p>
+ <label class="option" style="display:flex;justify-content:flex-start">
+   <input type="checkbox" id="accept-omni" style="width:auto;margin-right:12px">
+   <span>Acepto que esta producción utilice la API de Gemini con cargos reales. Sé que si falla después de generar escenas podría haber consumos.</span>
+ </label>
+ <div class="github-auth">
+  <div class="auth-copy"><strong id="login-state-omni">Verificando sesión…</strong><span>El acceso es exclusivo para la cuenta propietaria hecagus. Los secretos no se escriben en el navegador.</span></div>
+  <div class="verify-row"><a href="/api/login" class="verify-btn">Entrar con GitHub</a><a href="https://github.com/hecagus/Hecagus-Reels/actions/workflows/generar-omni.yml" target="_blank" rel="noopener noreferrer" class="verify-btn">Ejecución manual</a></div>
+ </div>
+ <button type="button" id="start-omni" class="primary-btn">Crear video desde mi idea <span aria-hidden="true">➜</span></button>
+ <p id="message-omni" class="feedback" role="status" aria-live="polite"></p>
+</section>
+<aside class="preview-col">
+<section class="panel tasks">
+ <div class="section-top"><span class="section-index">02 / RESULTADOS</span><button type="button" id="refresh-omni" class="refresh">Actualizar ↻</button></div>
+ <h2>Mis videos Omni</h2>
+ <div class="task-list" id="renders-omni"><p class="placeholder">Inicia sesión para consultar las producciones.</p></div>
+ <p class="preview-foot">Las descargas incluyen MP4, portada y guion JSON. Los archivos de GitHub Actions se conservan 7 días.</p>
+</section>
+<section class="panel">
+ <div class="section-top"><span class="section-index">ALCANCE ACTUAL</span></div>
+ <p class="preview-foot" style="text-align:left">El guion es generado por Gemini y las escenas por Omni Flash. Cada escena dura hasta 6 segundos de montaje. La continuidad visual, las voces y la sincronización labial pueden variar: aún no hay control por fotografía de referencia. Si Google no entrega audio o video, la ejecución falla en vez de afirmar que terminó.</p>
+ <p class="preview-foot" style="text-align:left">El repositorio y sus ejecuciones son públicos. Evita introducir ideas o datos privados.</p>
+</section>
+</aside>
+</div>
+<footer>HEC REELS · Gemini Omni + FFmpeg + GitHub Actions <span>Generación bajo demanda, sin ejecución automática</span></footer>
+</main>
+</body>
+</html>
