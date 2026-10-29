@@ -1,174 +1,225 @@
 #!/usr/bin/env python3
-"""Escena 3D procedural vertical para HEC REELS, sin modelos ni APIs externos.
+"""HEC REELS: objetos 3D procedurales según el director de escenas.
 
-Renderiza 72 PNG en Cycles CPU. El workflow repite el clip y une
-el audio generado por Piper; la escena 3D es demostrativa.
+No usa servicios externos ni ejecuta instrucciones del usuario. Cada escena
+se renderiza por separado y luego se compone con la duración real de Piper.
 """
+import json
 import math
 import os
 from pathlib import Path
 import bpy
 from mathutils import Vector
 
-out = Path(os.getenv("HEC_3D_FRAMES", "output/3d_frames"))
-out.mkdir(parents=True, exist_ok=True)
+ROOT=Path(os.getenv("HEC_3D_FRAMES","output/3d_frames"))
+TEST=os.getenv("HEC_3D_TEST")=="1"
+PLAN=os.getenv("HEC_3D_PLAN")
+ALLOWED={"payment","network","food","motorcycle","cloud","generic"}
+LABELS={
+  "payment":"PAGO CON TARJETA","network":"REDES Y CONEXIONES",
+  "food":"COMIDA Y COCINA","motorcycle":"MOTOCICLETA",
+  "cloud":"SERVICIOS EN NUBE","generic":"HEC REELS 3D"
+}
+if PLAN:
+    data=json.loads(Path(PLAN).read_text(encoding="utf-8"))
+    shots=data["scenes"]
+    if not 1<=len(shots)<=12 or any(
+      not isinstance(s,dict) or
+      s.get("kind") not in ALLOWED or
+      s.get("index")!=i+1 or
+      not isinstance(s.get("duration"),(int,float)) or
+      not 0.1<=s["duration"]<=180
+      for i,s in enumerate(shots)):
+        raise ValueError("Plan 3D inválido.")
+else:
+    shots=[{"index":1,"kind":"generic","duration":2.0}]
+if TEST: shots=shots[:2]
+ROOT.mkdir(parents=True,exist_ok=True)
+
 bpy.ops.object.select_all(action="SELECT")
 bpy.ops.object.delete(use_global=False)
-sc = bpy.context.scene
-sc.render.engine = "CYCLES"
-sc.cycles.device = "CPU"
-sc.cycles.samples = 8
-# Ubuntu's Blender package can lack OpenImageDenoise: keep CPU rendering portable.
+sc=bpy.context.scene
+sc.render.engine="CYCLES"
+sc.cycles.device="CPU"
+sc.cycles.samples=2 if TEST else 4
+sc.render.resolution_x=120 if TEST else 360
+sc.render.resolution_y=214 if TEST else 640
+sc.render.resolution_percentage=100
+sc.render.fps=12
+sc.frame_start=1
+sc.frame_end=2 if TEST else 24
+sc.render.image_settings.file_format="PNG"
+sc.render.image_settings.color_mode="RGB"
 for layer in sc.view_layers:
-    if hasattr(layer, "cycles"):
-        layer.cycles.use_denoising = False
-if hasattr(sc.cycles, "use_denoising"):
-    sc.cycles.use_denoising = False
-sc.render.resolution_x = 360
-sc.render.resolution_y = 640
-sc.render.resolution_percentage = 100
-sc.render.fps = 12
-sc.frame_start = 1
-sc.frame_end = 72
-sc.render.image_settings.file_format = "PNG"
-sc.render.image_settings.color_mode = "RGB"
-sc.render.filepath = str(out.resolve()) + "/"
-sc.render.film_transparent = False
-if os.getenv("HEC_3D_TEST") == "1":
-    sc.render.resolution_x = 120
-    sc.render.resolution_y = 214
-    sc.cycles.samples = 2
-    sc.frame_end = 2
+    if hasattr(layer,"cycles"):
+        layer.cycles.use_denoising=False
+if hasattr(sc.cycles,"use_denoising"): sc.cycles.use_denoising=False
+world=sc.world or bpy.data.worlds.new("Fondo HEC")
+sc.world=world
+world.use_nodes=True
+world.node_tree.nodes["Background"].inputs["Color"].default_value=(.008,.016,.038,1)
+world.node_tree.nodes["Background"].inputs["Strength"].default_value=.7
 
+def material(name,c,metal=0,glow=0):
+    m=bpy.data.materials.new(name)
+    m.diffuse_color=(*c,1)
+    m.use_nodes=True
+    p=m.node_tree.nodes.get("Principled BSDF")
+    p.inputs["Base Color"].default_value=(*c,1)
+    p.inputs["Metallic"].default_value=metal
+    p.inputs["Roughness"].default_value=.48
+    if glow and p.inputs.get("Emission Color"):
+        p.inputs["Emission Color"].default_value=(*c,1)
+        p.inputs["Emission Strength"].default_value=glow
+    return m
 
-world = sc.world or bpy.data.worlds.new("Azul nocturno")
-sc.world = world
-world.use_nodes = True
-background = world.node_tree.nodes.get("Background")
-background.inputs["Color"].default_value = (.007, .015, .034, 1)
-background.inputs["Strength"].default_value = .6
+dark=material("Acero azul",(.025,.09,.15),.5)
+black=material("Negro",(.015,.018,.025),.2)
+cyan=material("Turquesa",(.06,.82,.86),.1,.8)
+amber=material("Naranja",(.96,.38,.06),.25,.5)
+white=material("Blanco",(.86,.96,.99),.1,.2)
+skin=material("Piel canela",(.41,.25,.18))
+green=material("Verde",(.12,.75,.44),.1,.7)
+red=material("Rojo",(.78,.12,.15))
+materials={"dark":dark,"black":black,"cyan":cyan,"amber":amber,"white":white,"skin":skin,"green":green,"red":red}
+temporary=[]
 
-def mat(name, rgba, metallic=0.0, emission=0.0):
-    material = bpy.data.materials.new(name)
-    material.diffuse_color = rgba
-    material.use_nodes = True
-    shader = material.node_tree.nodes.get("Principled BSDF")
-    shader.inputs["Base Color"].default_value = rgba
-    shader.inputs["Metallic"].default_value = metallic
-    shader.inputs["Roughness"].default_value = .5
-    if emission:
-        if shader.inputs.get("Emission Color"):
-            shader.inputs["Emission Color"].default_value = rgba
-        if shader.inputs.get("Emission Strength"):
-            shader.inputs["Emission Strength"].default_value = emission
-    return material
-
-navy = mat("azul acero", (.025, .06, .12, 1), .35)
-black = mat("negro camiseta", (.01, .012, .025, 1))
-skin = mat("piel canela", (.45, .24, .15, 1))
-cyan = mat("neon turquesa", (.04, .85, .9, 1), .2, 1.2)
-orange = mat("naranja", (1, .35, .05, 1), .2, .7)
-white = mat("letras", (.86, .96, 1, 1), 0, .5)
-
-def sphere(name, position, size, material):
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, location=position)
-    obj = bpy.context.object
-    obj.name = name
-    obj.scale = size
-    obj.data.materials.append(material)
+def register(obj,name,mat):
+    obj.name=name
+    if mat:obj.data.materials.append(mat)
+    temporary.append(obj)
     return obj
 
-def cube(name, position, size, material):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=position)
-    obj = bpy.context.object
-    obj.name = name
-    obj.dimensions = size
-    obj.data.materials.append(material)
-    return obj
+def box(name,loc,dimensions,mat):
+    bpy.ops.mesh.primitive_cube_add(size=1,location=loc)
+    ob=register(bpy.context.object,name,mat)
+    ob.dimensions=dimensions
+    bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
+    return ob
 
-def cylinder(name, position, radius, depth, material):
-    bpy.ops.mesh.primitive_cylinder_add(vertices=32, radius=radius, depth=depth, location=position)
-    obj = bpy.context.object
-    obj.name = name
-    obj.data.materials.append(material)
-    return obj
+def ball(name,loc,scale,mat):
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16,ring_count=10,location=loc)
+    ob=register(bpy.context.object,name,mat)
+    ob.scale=scale
+    return ob
 
-cylinder("base", (0, 0, -.15), 3.4, .25, navy)
-avatar = bpy.data.objects.new("HecAgus pivot", None)
-sc.collection.objects.link(avatar)
-figure = [
-    sphere("camiseta negra", (-1.1, 0, 1.55), (.68, .5, .79), black),
-    sphere("cabeza", (-1.1, -.04, 2.70), (.51, .49, .59), skin),
-    sphere("cabello", (-1.1, .045, 3.05), (.52, .48, .23), black),
-    sphere("ojo izquierdo", (-1.28, -.49, 2.77), (.057, .052, .067), black),
-    sphere("ojo derecho", (-.92, -.49, 2.77), (.057, .052, .067), black),
-    sphere("brazo izquierdo", (-1.84, 0, 1.65), (.21, .26, .57), black),
-    sphere("brazo derecho", (-.39, 0, 1.65), (.21, .26, .57), black),
-    cube("pierna izquierda", (-1.35, .03, .52), (.3, .38, 1.0), black),
-    cube("pierna derecha", (-.87, .03, .52), (.3, .38, 1.0), black),
-    cube("detalle camiseta", (-1.1, -.51, 1.65), (.47, .04, .08), cyan),
-]
-# Parent the meshes while retaining their world transforms.
-bpy.context.view_layer.update()
-for obj in figure:
-    world_transform = obj.matrix_world.copy()
-    obj.parent = avatar
-    obj.matrix_world = world_transform
+def cyl(name,loc,radius,depth,mat,rotation=None):
+    bpy.ops.mesh.primitive_cylinder_add(vertices=24,radius=radius,depth=depth,location=loc)
+    ob=register(bpy.context.object,name,mat)
+    if rotation:ob.rotation_euler=rotation
+    return ob
 
-rotator = bpy.data.objects.new("Cubo animado pivot", None)
-sc.collection.objects.link(rotator)
-rotator.location = (1.16, 0, 2.15)
-box = cube("Cubo físico", (1.16, 0, 2.15), (1.2, 1.2, 1.2), navy)
-edge = cube("Aristas geométricas", (1.16, 0, 2.15), (1.4, 1.4, 1.4), cyan)
-mod = edge.modifiers.new("Wireframe", "WIREFRAME")
-mod.thickness = .04
-center = sphere("Centro naranja", (1.16, 0, 2.15), (.30, .30, .30), orange)
-bpy.context.view_layer.update()
-for obj in [box, edge, center]:
-    w = obj.matrix_world.copy()
-    obj.parent = rotator
-    obj.matrix_world = w
+def label(text,loc=(0,-.35,4.28),size=.39,mat=white):
+    bpy.ops.object.text_add(location=loc,rotation=(math.pi/2,0,0))
+    ob=register(bpy.context.object,"Texto "+text,mat)
+    ob.data.body=text
+    ob.data.align_x="CENTER"
+    ob.data.size=size
+    ob.data.extrude=.015
+    return ob
 
-for f, angle in [(1, 0), (72, math.pi * 4)]:
-    rotator.rotation_euler = (angle * .2, angle * .65, angle)
-    rotator.keyframe_insert(data_path="rotation_euler", frame=f)
-for f, z in [(1, 0), (36, .1), (72, 0)]:
-    avatar.location.z = z
-    avatar.keyframe_insert(data_path="location", frame=f)
+def link(a,b,radius,mat,name="conexion"):
+    delta=Vector(b)-Vector(a)
+    mid=(Vector(a)+Vector(b))*.5
+    ob=cyl(name,mid,radius,delta.length,mat)
+    ob.rotation_euler=delta.to_track_quat("Z","Y").to_euler()
+    return ob
 
-bpy.ops.object.text_add(location=(0, 0, 4.25), rotation=(math.pi/2, 0, 0))
-title = bpy.context.object
-title.name = "Texto 3D HEC REELS"
-title.data.body = "HEC REELS"
-title.data.align_x = "CENTER"
-title.data.size = .58
-title.data.extrude = .028
-title.data.materials.append(white)
+def payment():
+    # Terminal POS con pantalla, lector y tarjeta separada.
+    box("terminal",(0,0,2.0),(2.1,.55,2.5),dark)
+    box("pantalla",(0,-.30,2.5),(1.55,.08,.72),cyan)
+    for row in range(3):
+        for col in range(3):
+            box("tecla",(-.53+col*.53,-.34,1.82-row*.28),(.28,.09,.17),white)
+    box("tarjeta",(1.9,-.6,2.2),(1.15,.07,.72),amber)
+    box("chip",(1.65,-.68,2.27),(.24,.02,.2),white)
 
-bpy.ops.object.camera_add(location=(0, -12.5, 4.8))
-camera = bpy.context.object
-sc.camera = camera
-camera.data.type = "ORTHO"
-camera.data.ortho_scale = 7.0
-aim = Vector((0, 0, 2.1))
-camera.rotation_euler = (aim - camera.location).to_track_quat("-Z", "Y").to_euler()
-for frame, x in [(1, -.15), (72, .15)]:
-    camera.location.x = x
-    camera.keyframe_insert(data_path="location", frame=frame)
+def network():
+    pts=[(-1.75,0,2.2),(0,0,3.05),(1.75,0,2.2),
+         (-.8,0,1.25),(.8,0,1.25)]
+    for a,b in [(0,1),(1,2),(0,3),(3,4),(4,2),(1,4)]:
+        link(pts[a],pts[b],.06,cyan)
+    for n,p in enumerate(pts):
+        ball("nodo "+str(n),p,(.35,.35,.35),amber if n==1 else white)
 
-for name, point, power, color in [
-    ("frontal", (-3, -4, 7), 1000, (1, .96, .90)),
-    ("neón", (3, 1, 5), 700, (.2, .9, 1)),
-]:
-    bpy.ops.object.light_add(type="AREA", location=point)
-    light = bpy.context.object
-    light.name = name
-    light.data.energy = power
-    light.data.color = color
-    light.data.shape = "DISK"
-    light.data.size = 5
-    light.rotation_euler = (Vector((0, 0, 2)) - light.location).to_track_quat("-Z", "Y").to_euler()
+def food():
+    cyl("plato",(0,0,1.15),2.1,.13,white)
+    cyl("base",(0,0,1.28),1.55,.18,dark)
+    for i in range(10):
+        a=i*2*math.pi/10
+        ball("ingrediente",(1.0*math.cos(a),.8*math.sin(a),1.54),(.32,.26,.20),green if i%3==0 else amber)
+    for i in range(6):
+        a=i*2*math.pi/6
+        cyl("pasta",(.45*math.cos(a),.45*math.sin(a),1.65),.13,.55,amber,rotation=(.4,0,a))
 
-sc.frame_set(1)
-print("RENDER 3D:", out, sc.frame_end, "fotogramas")
-bpy.ops.render.render(animation=True)
+def motorcycle():
+    for x in (-1.35,1.35):
+        cyl("rueda",(x,0,1.02),.77,.38,black,(math.pi/2,0,0))
+        cyl("eje",(x,-.23,1.02),.38,.04,cyan,(math.pi/2,0,0))
+    link((-1.35,0,1.02),(.1,0,2.15),.12,amber)
+    link((.1,0,2.15),(1.35,0,1.02),.12,amber)
+    link((-1.35,0,1.02),(.55,0,1.12),.12,amber)
+    box("tanque",(-.1,-.2,2.24),(1.25,.66,.52),red)
+    box("asiento",(-.9,-.2,2.6),(1.0,.6,.18),black)
+    link((1.35,0,1.02),(1.5,0,2.65),.08,cyan)
+    link((1.1,0,2.65),(2,0,2.65),.07,white)
+
+def cloud():
+    for x,y,z,r in [(-.9,0,2.35,.72),(0,0,2.8,.9),(.9,0,2.4,.8),(0,0,2.1,.8)]:
+        ball("nube",(x,y,z),(r,r*.7,r*.8),white)
+    for x in (-1.5,0,1.5):
+        box("servidor",(x,-.2,.95),(1.0,.60,1.15),dark)
+        for row in range(3):
+            box("LED",(x-.23,-.55,.6+row*.32),(.13,.08,.09),green)
+    for x in (-1.5,0,1.5):
+        link((x,0,1.5),(x*.5,0,2.05),.036,cyan)
+
+def generic():
+    box("concepto",(0,0,2.0),(1.7,1.7,1.7),dark)
+    frame=box("aristas",(0,0,2.0),(1.95,1.95,1.95),cyan)
+    frame.modifiers.new("malla","WIREFRAME").thickness=.04
+    ball("centro",(0,-1,2.0),(.40,.40,.40),amber)
+
+BUILDERS={
+    "payment":payment,"network":network,"food":food,
+    "motorcycle":motorcycle,"cloud":cloud,"generic":generic,
+}
+
+# Fixed world floor and studio lights are shared across every shot.
+bpy.ops.mesh.primitive_cylinder_add(vertices=48,radius=3.15,depth=.20,location=(0,0,-.10))
+bpy.context.object.name="Tarima"
+bpy.context.object.data.materials.append(dark)
+bpy.ops.object.camera_add(location=(0,-12.7,4.55))
+camera=bpy.context.object
+sc.camera=camera
+camera.data.type="ORTHO"
+camera.data.ortho_scale=7.4
+camera.rotation_euler=(Vector((0,0,2.1))-camera.location).to_track_quat("-Z","Y").to_euler()
+for place,power,rgb in [((-3,-4,7),1300,(1,.94,.84)),((3,1,6),850,(.2,.9,1))]:
+    bpy.ops.object.light_add(type="AREA",location=place)
+    lamp=bpy.context.object
+    lamp.data.energy=power
+    lamp.data.color=rgb
+    lamp.data.shape="DISK"
+    lamp.data.size=5
+    lamp.rotation_euler=(Vector((0,0,2))-lamp.location).to_track_quat("-Z","Y").to_euler()
+
+for shot in shots:
+    kind=shot["kind"]
+    label(LABELS[kind])
+    label("ESCENA %02d"%shot["index"],loc=(0,-.3,3.77),size=.18,mat=cyan)
+    BUILDERS[kind]()
+    # Real camera motion; visible geometry is different for each category.
+    for f,x in [(1,-.12),(sc.frame_end,.12)]:
+        camera.location.x=x
+        camera.keyframe_insert(data_path="location",frame=f)
+    folder=ROOT/("scene_%02d"%shot["index"])
+    folder.mkdir(parents=True,exist_ok=True)
+    sc.render.filepath=str(folder.resolve())+"/"
+    sc.frame_set(1)
+    print("RENDER 3D",shot["index"],kind,str(folder),flush=True)
+    bpy.ops.render.render(animation=True)
+    for obj in temporary:
+        bpy.data.objects.remove(obj,do_unlink=True)
+    temporary.clear()
