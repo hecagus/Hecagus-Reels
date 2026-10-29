@@ -1,0 +1,73 @@
+name: HEC REELS - Video IA Gemini Omni
+run-name: Omni ${{ inputs.folio || 'manual' }}
+on:
+  workflow_dispatch:
+    inputs:
+      idea:
+        description: 'Idea general (8-350 caracteres, visible en ejecuciones de repo público)'
+        type: string
+        required: true
+      duracion:
+        description: '6 s prueba o 60 s completo - ambas opciones consumen API de pago'
+        type: choice
+        required: true
+        default: '6'
+        options:
+          - '6'
+          - '60'
+      costo_aceptado:
+        description: 'Acepto consumo de créditos de Google API'
+        type: choice
+        required: true
+        default: 'NO'
+        options:
+          - 'NO'
+          - 'SI'
+      folio:
+        description: 'ID del proyecto'
+        type: string
+        required: false
+        default: manual
+permissions:
+  contents: read
+concurrency:
+  group: hec-omni-${{ github.actor }}
+  cancel-in-progress: false
+jobs:
+  generar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      HEC_OMNI_IDEA: ${{ inputs.idea }}
+      HEC_OMNI_DURATION: ${{ inputs.duracion }}
+      HEC_OMNI_COST_ACCEPTED: ${{ inputs.costo_aceptado }}
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+      - name: Pruebas locales sin consumo de API
+        run: python -m unittest discover -s tests -p test_omni.py -v
+      - name: Comprobar clave y aceptación
+        run: |
+          test -n "$GEMINI_API_KEY" || { echo "Configura GEMINI_API_KEY en GitHub Actions secrets"; exit 1; }
+          test "$HEC_OMNI_COST_ACCEPTED" = "SI" || { echo "Falta aprobación de consumo de API"; exit 1; }
+      - name: Guion, escenas y montaje automatizado
+        run: python omni_producer.py --output output
+      - name: Entregar MP4, portada y guion
+        uses: actions/upload-artifact@v4
+        with:
+          name: HEC-REELS-OMNI-${{ github.run_number }}
+          path: |
+            output/hec_omni.mp4
+            output/hec_omni_portada.png
+            output/hec_omni_guion.json
+          if-no-files-found: error
+          retention-days: 7
