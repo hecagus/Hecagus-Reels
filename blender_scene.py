@@ -47,7 +47,7 @@ sc.render.resolution_y=214 if TEST else 640
 sc.render.resolution_percentage=100
 sc.render.fps=12
 sc.frame_start=1
-sc.frame_end=2 if TEST else 24
+sc.frame_end=2 if TEST else 12
 sc.render.image_settings.file_format="PNG"
 sc.render.image_settings.color_mode="RGB"
 for layer in sc.view_layers:
