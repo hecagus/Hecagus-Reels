@@ -4,7 +4,7 @@ Sitio: https://hecagus-reels.vercel.app
 
 Escribe una idea o un guion, genera la voz con Piper en español mexicano y renderiza desde GitHub Actions. Hay dos motores:
 - **2.5D (predeterminado):** Pillow + FFmpeg, bajo consumo.
-- **Blender 3D (experimental):** escena 3D procedural con personaje estilizado y cubo animado, renderizada con Cycles CPU. El clip 3D se repite para cubrir la narración de Piper. Todavía NO representa visualmente las ideas de cada guion, no tiene sincronización labial ni genera escenas fotorrealistas. Puede tardar más y consumir minutos de Actions.
+- **Blender 3D (experimental):** escenas 3D procedurales **distintas según palabras clave del guion** (terminales de pago, redes, comida, motocicletas y nube), renderizadas con Cycles CPU. `scene_director.py` elige una plantilla visual permitida para cada escena y `compose_3d.py` la monta usando los tiempos reales de la narración Piper. Si no reconoce el tema usa geometría genérica. **No es generación libre con IA**, no hay sincronización labial ni escenas fotorrealistas. Puede consumir más minutos de Actions que el motor 2.5D.
 
 ## Sin introducir claves en la página
 
@@ -44,7 +44,7 @@ Si no defines `HEC_SESSION_SECRET`, el servidor usa `GITHUB_TOKEN` como secreto 
 - Las URLs de descarga se firman por dos minutos; los artifacts duran siete días.
 - El repositorio es público: no introduzcas datos privados en títulos de ejecución o narraciones.
 - Esta demo todavía no dispone de cola ni límite de frecuencia persistente. El acceso solo para el propietario reduce la exposición, pero un control de cuota sigue siendo recomendable.
-- `blender_scene.py` es una escena genérica: para reels que expliquen conceptos concretos será necesario traducir el guion a objetos y animaciones específicas.
+- `blender_scene.py` solo ofrece cinco categorías de objetos (más el modo genérico). Es una primera biblioteca de plantillas, no comprensión general del guion. Las categorías y sus palabras clave se pueden ampliar en `scene_director.py` tras pruebas.
 
 ## Desarrollo y pruebas
 
@@ -53,4 +53,4 @@ cd web
 npm test
 ```
 
-El workflow `.github/workflows/verificar-web.yml` comprueba sintaxis de los endpoints y pruebas de seguridad. Para verificar Blender realmente hay que ejecutar **Generar reel con Piper es-MX** en GitHub Actions con `estilo=3d` y comprobar el MP4 y el artifact. Una comprobación de sintaxis por sí sola no garantiza el render 3D.
+El workflow `.github/workflows/verificar-web.yml` comprueba sintaxis de los endpoints y pruebas de seguridad. `.github/workflows/smoke-blender.yml` verifica imágenes de dos categorías y la composición H.264/AAC con una pista de audio simulada. La validación completa exige ejecutar **Generar reel con Piper es-MX** con `estilo=3d` y comprobar el audio Piper real. La prueba simulada no equivale a escuchar la voz.
