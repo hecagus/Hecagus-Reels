@@ -54,3 +54,25 @@ npm test
 ```
 
 El workflow `.github/workflows/verificar-web.yml` comprueba sintaxis de los endpoints y pruebas de seguridad. `.github/workflows/smoke-blender.yml` verifica imágenes de dos categorías y la composición H.264/AAC con una pista de audio simulada. La validación completa exige ejecutar **Generar reel con Piper es-MX** con `estilo=3d` y comprobar el audio Piper real. La prueba simulada no equivale a escuchar la voz.
+
+
+## Generación autónoma con Gemini Omni Flash (experimental)
+
+Página: https://hecagus-reels.vercel.app/omni.html
+
+Esta función es independiente del motor gratuito Piper. Recibe una idea de 8-350 caracteres, crea un guion JSON con Gemini 2.5 Flash, solicita clips con Gemini Omni Flash y usa FFmpeg en GitHub Actions para normalizar 6 segundos por escena y ensamblar un MP4 9:16 con audio.
+
+### Configuración mínima (sin pegar claves en la web)
+
+1. En Google AI Studio crea una API key de un proyecto con **facturación habilitada** y acceso al modelo **gemini-omni-1.1-flash**. La suscripción de Gemini para consumidores no incluye automáticamente los cargos de esta API.
+2. En GitHub abre hecagus/Hecagus-Reels → Settings → Secrets and variables → Actions → New repository secret. Nombre exacto: **GEMINI_API_KEY**. Su valor nunca se coloca en el código ni en Vercel.
+3. Conserva la configuración de GitHub OAuth y GITHUB_TOKEN en Vercel descrita arriba. La web autoriza únicamente a la cuenta hecagus; si no está habilitado OAuth, ejecuta el workflow manual **HEC REELS - Video IA Gemini Omni**.
+4. Elige una prueba de **6 segundos** antes del video completo de **60 segundos**. Marca el consentimiento de gasto. No hay generación ni cargos automáticos al publicar esta actualización.
+
+**Costos y límites:** El precio efectivo publicado de Omni a 720p es aproximadamente US$0.10 por segundo generado, más guion y posibles intentos fallidos. Son referencias aproximadas de US$0.60/6s y US$6/60s si la duración realmente generada coincide con la montada. Los clips de Omni pueden durar de 3 a 10 s; el montaje ajusta cada clip a 6 s y puede congelar el último fotograma cuando sea más corto. No hay reintentos automáticos que vuelvan a cobrar. La factura real depende de tokens de salida, duración efectiva y tarifas vigentes. El guion/archivo son visibles a quien acceda al artifact con autorización; el repo y las entradas de Actions pueden ser públicos.
+
+**Limitaciones:** No se admite aún fotografía de referencia desde la web. Los personajes se describen en los prompts y su continuidad no está garantizada. Gemini Omni puede fallar con voces en español mexicano o sincronía labial. Si una escena carece de audio o video, el workflow falla y no afirma haber entregado un MP4. El resultado se descarga desde la sección "Mis videos Omni" en un archivo ZIP con MP4, portada y guion. Las ejecuciones están serializadas por cuenta. Los artifacts expiran en 7 días.
+
+Código: omni_producer.py, .github/workflows/generar-omni.yml, web/api/omni.js, web/omni.html.
+
+Documentación Google: https://ai.google.dev/gemini-api/docs/omni y https://ai.google.dev/gemini-api/docs/pricing.

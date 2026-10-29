@@ -22,6 +22,8 @@ jobs:
       - name: Revisar sintaxis
         run: |
           node --check web/app.js
+          node --check web/omni.js
+          node --check web/api/omni.js
           node --check web/api/_lib.js
           node --check web/api/_oauth.js
           node --check web/api/login.js
@@ -35,7 +37,9 @@ jobs:
           node --check web/api/script.js
           node --check web/api/download.js
       - name: Revisar sintaxis de escena Blender
-        run: python -m py_compile blender_scene.py
+        run: |
+          python -m py_compile blender_scene.py omni_producer.py
+          python -m unittest discover -s tests -p test_omni.py -v
       - name: Ejecutar pruebas unitarias
         working-directory: web
         run: npm test
