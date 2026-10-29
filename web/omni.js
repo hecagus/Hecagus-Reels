@@ -14,8 +14,8 @@ function update(){
  $('counter-omni').textContent=$('idea-omni').value.length+'/350';
  const duration=$('length-omni').value;
  $('price-omni').textContent=duration==='60'
-  ?'Costo estimado: aproximadamente US$6 de video a 720p + guion. Los fallos o intentos adicionales pueden generar cargos.'
-  :'Costo estimado: aproximadamente US$0.60 de video a 720p + guion. Es una prueba con cobro real.';
+  ?'Referencia de costo: US$3–10 de video por 10 clips (3–10 s cada uno) a 720p, más guion; no es un límite garantizado.'
+  :'Referencia de costo: US$0.30–1 por clip generado (3–10 s) a 720p, más guion. La prueba tiene cobro real.';
 }
 function link(text,url){
  const a=document.createElement('a');a.textContent=text;a.href=url;
