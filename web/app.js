@@ -8,6 +8,30 @@ const els = {
   draft: $('draft-btn'), list: $('task-list')
 };
 
+// Preserve only non-secret editor content across the one-time GitHub OAuth redirect.
+// sessionStorage is scoped to this browser tab, not a persistent account database.
+const DRAFT_KEY='hec-editor-v1';
+function saveEditor(){
+  try{
+    sessionStorage.setItem(DRAFT_KEY,JSON.stringify({
+      mode:state.mode,idea:els.idea.value.slice(0,350),
+      script:els.script.value.slice(0,680),rate:els.rate.value,visual:els.visual.value
+    }));
+  }catch{/* Private browsing may disable storage. */}
+}
+function restoreEditor(){
+  try{
+    const raw=sessionStorage.getItem(DRAFT_KEY);
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(typeof data.idea==='string')els.idea.value=data.idea.slice(0,350);
+    if(typeof data.script==='string')els.script.value=data.script.slice(0,680);
+    if(['0.95','1.00','1.05','1.10'].includes(data.rate))els.rate.value=data.rate;
+    if(['2d','3d'].includes(data.visual))els.visual.value=data.visual;
+    if(['idea','script'].includes(data.mode))state.mode=data.mode;
+  }catch{/* A damaged draft must not prevent the page from loading. */}
+}
+
 function message(value, type='') {
   els.feedback.textContent = value;
   els.feedback.className = 'feedback '+type;
@@ -34,6 +58,7 @@ function setMode(mode) {
   $('draft-btn').hidden=mode!=='idea';
   message('');
   draftMessage('');
+  saveEditor();
 }
 function scenes(text) {
   return text.split('||').map(x=>x.replace(/\s+/g,' ').trim());
@@ -208,8 +233,11 @@ function setup(){
       draftMessage('Cambiaste la idea. Genera un borrador nuevo antes de continuar.');
     }
     updatePreview();
+    saveEditor();
   });
-  els.script.addEventListener('input',updatePreview);
+  els.script.addEventListener('input',()=>{updatePreview();saveEditor();});
+  els.rate.addEventListener('change',saveEditor);
+  els.visual.addEventListener('change',saveEditor);
   $('copy-script').addEventListener('click',async()=>{
     try{
       const text=validate(els.script.value);
@@ -234,7 +262,8 @@ function setup(){
   $('refresh-btn').addEventListener('click',fetchRuns);
   els.draft.addEventListener('click',makeDraft);
   els.start.addEventListener('click',start);
-  setMode('idea');updatePreview();status();
+  restoreEditor();setMode(state.mode);updatePreview();status();
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.signedIn)fetchRuns();});
+  window.addEventListener('pagehide',saveEditor);
 }
 setup();
