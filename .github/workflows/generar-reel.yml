@@ -112,6 +112,8 @@ jobs:
             --frames output/3d_frames --narrated-video output/hec_reel.mp4 \
             --out output/hec_reel_3d.mp4
           mv output/hec_reel_3d.mp4 output/hec_reel.mp4
+          ffmpeg -hide_banner -loglevel error -y -i output/3d_frames/scene_01/0001.png \
+            -vf scale=540:960 -frames:v 1 output/hec_reel_portada.png
           ffprobe -v error -select_streams v:0 -show_entries stream=codec_name,width,height \
             -of default=noprint_wrappers=1 output/hec_reel.mp4
       - name: Entregar video y archivos
