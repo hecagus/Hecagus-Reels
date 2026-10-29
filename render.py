@@ -446,6 +446,14 @@ def main():
             start, speech_start, speech_end, end = segments[i]
             srt_lines.extend([str(i+1),f'{srtstamp(speech_start)} --> {srtstamp(speech_end)}',sc['text'],''])
         out.with_suffix('.srt').write_text('\n'.join(srt_lines),encoding='utf8')
+        # Machine-readable scene boundaries from the *actual* Piper audio.
+        # This file allows Blender clips to follow narration rather than
+        # repeating one unrelated animation throughout the entire reel.
+        out.with_name(out.stem+'_timing.json').write_text(
+            json.dumps({'version':1,'offsets':[round(t,4) for t in offsets],
+                        'duration':round(duration,4),'fps':args.fps},indent=2)+'\n',
+            encoding='utf8')
+
         out.with_name(out.stem+'_titulo.txt').write_text(raw.get('title','Reel explicativo')+'\n',encoding='utf8')
         out.with_name(out.stem+'_descripcion.txt').write_text(raw.get('description','')+'\n',encoding='utf8')
         print(f'Video creado: {out}\nDuración: {duration:.1f} s\nEscenas: {len(scenes)}')
